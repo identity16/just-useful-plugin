@@ -1,0 +1,15 @@
+{
+  "name": "just-useful-dev",
+  "description": "Development marketplace for just-useful-plugin",
+  "owner": {
+    "name": "m2"
+  },
+  "plugins": [
+    {
+      "name": "just-useful-plugin",
+      "description": "Practical skills for Claude Code: document gardening, knowledge base maintenance, and doc-code sync workflows",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}

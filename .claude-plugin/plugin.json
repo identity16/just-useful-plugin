@@ -1,0 +1,11 @@
+{
+  "name": "just-useful-plugin",
+  "description": "Practical skills for Claude Code: document gardening, knowledge base maintenance, and doc-code sync workflows",
+  "version": "0.1.0",
+  "author": {
+    "name": "m2"
+  },
+  "repository": "",
+  "license": "MIT",
+  "keywords": ["skills", "documentation", "gardening", "knowledge-base", "claude-md"]
+}
