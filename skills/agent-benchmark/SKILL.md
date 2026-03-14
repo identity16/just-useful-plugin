@@ -223,9 +223,9 @@ Calculate metrics as defined in `references/metrics.md`:
 
 - **Lostness score** per task: `L = sqrt((N/S - 1)² + (R/N - 1)²)`
 
-Refer to `references/metrics.md` for all 9 metrics across 3 dimensions:
+Refer to `references/metrics.md` for all 11 metrics across 3 dimensions:
 - **Navigability** (40%): Pathfinding Score, First Touch Rate, Revisit Waste Rate
-- **Cognitive Load** (35%): Focus Ratio, Warmup Cost, Token Efficiency Rate
+- **Cognitive Load** (35%): Focus Ratio, Warmup Cost, Token Efficiency Rate, Orientation Time Ratio, Warmup Precision
 - **Task Effectiveness** (25%): Task Success Rate, Tool Call Count, Speed Score
 
 ### [9] Grading & Agent Readiness Score
@@ -246,7 +246,7 @@ Composite score reflecting overall environment quality:
 | Dimension | Weight | Metrics |
 |-----------|--------|---------|
 | Navigability | 40% | Pathfinding Score, First Touch Rate, Revisit Waste Rate |
-| Cognitive Load | 35% | Focus Ratio, Warmup Cost, Token Efficiency Rate |
+| Cognitive Load | 35% | Focus Ratio, Warmup Cost, Token Efficiency Rate, Orientation Time Ratio, Warmup Precision |
 | Task Effectiveness | 25% | Task Success Rate, Tool Call Count, Speed Score |
 
 ### [10] Terminal Output

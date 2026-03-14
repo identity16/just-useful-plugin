@@ -53,6 +53,25 @@ Each CLAUDE.md entry must specify **when to read it**. Simple pointers (path + d
 
 **The difference**: Simple pointers say "this exists." Conditional triggers say "read this when." Agents act on instructions, not awareness.
 
+### Add Section Hints for Faster Navigation
+
+When docs/ files are large (100+ lines), add **section hints** to conditional triggers so agents can target the relevant part without reading the whole file.
+
+```markdown
+# ❌ No section hint — agent reads entire file to find relevant section
+- When understanding layer boundaries → read `docs/architecture.md`
+
+# ✅ Section hint — agent can jump to the relevant section
+- When understanding layer boundaries → read `docs/architecture.md` §Layer Dependencies
+- When checking directory layout → read `docs/architecture.md` §Directory Structure
+```
+
+**Rules for section hints:**
+- Use `§` followed by the section heading name (matching the `##` or `###` heading in the doc)
+- Only add hints when the target file has 3+ distinct sections that serve different purposes
+- One trigger per section — don't combine multiple sections into one trigger
+- Keep section names short (2-3 words) — they are navigation aids, not descriptions
+
 ### docs/ = System of Record
 
 All context that agents need to read lives here.

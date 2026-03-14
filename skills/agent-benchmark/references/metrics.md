@@ -173,6 +173,58 @@ Token counts include both input and output tokens for each tool call. Only tool-
 | Fair | >= 0.2 |
 | Poor | < 0.2 |
 
+### 3.4 Orientation Time Ratio
+
+**Direction:** lower is better (0–1)
+
+Measures what fraction of total elapsed time was spent on orientation (read-only exploration) versus execution (productive modifications). Complements Focus Ratio (which counts calls) by capturing time — a single slow exploration call has more impact here than in Focus Ratio.
+
+**Variables:**
+- `orientation_time` = sum of elapsed time for all orientation tool calls (classified per Section 1)
+- `total_time` = total elapsed time from first to last tool call
+
+**Formula:**
+
+```
+orientation_time_ratio = orientation_time / total_time
+```
+
+**Grading:**
+
+| Grade | Threshold |
+|---|---|
+| Excellent | <= 0.4 |
+| Good | <= 0.55 |
+| Fair | <= 0.7 |
+| Poor | > 0.7 |
+
+### 3.5 Warmup Precision
+
+**Direction:** higher is better (0–1)
+
+Measures whether warmup calls (tool calls before the first Edit/Write) targeted answer-relevant files. Distinguishes productive warmup (reading the right files) from wasted warmup (exploring irrelevant files). Used alongside Warmup Cost to give a complete picture: high cost + high precision = justified warmup; high cost + low precision = wasted exploration.
+
+**Variables:**
+- `relevant_warmup_calls` = number of warmup tool calls that accessed files in the task's answer key
+- `warmup_cost` = total warmup tool calls (as defined in §3.2)
+
+**Formula:**
+
+```
+warmup_precision = relevant_warmup_calls / warmup_cost
+```
+
+If `warmup_cost = 0`, warmup precision is 1.0 (no warmup needed, no waste).
+
+**Grading:**
+
+| Grade | Threshold |
+|---|---|
+| Excellent | >= 0.8 |
+| Good | >= 0.5 |
+| Fair | >= 0.25 |
+| Poor | < 0.25 |
+
 ---
 
 ## 4. Dimension 3: Task Effectiveness (Weight: 25%)
@@ -253,9 +305,11 @@ speed_score = baseline_time / actual_time
 | 4 | Focus Ratio | Cognitive Load | higher is better | >= 0.5 | >= 0.3 | >= 0.15 | < 0.15 |
 | 5 | Warmup Cost | Cognitive Load | lower is better | <= 3 | <= 6 | <= 10 | > 10 |
 | 6 | Token Efficiency Rate | Cognitive Load | higher is better | >= 0.5 | >= 0.35 | >= 0.2 | < 0.2 |
-| 7 | Task Success Rate | Task Effectiveness | higher is better | = 1.0 | >= 0.75 | >= 0.5 | < 0.5 |
-| 8 | Tool Call Count | Task Effectiveness | lower is better | <= 5/10/20 | <= 10/20/35 | <= 20/35/50 | > 20/35/50 |
-| 9 | Speed Score | Task Effectiveness | higher is better | >= 0.8 | >= 0.6 | >= 0.4 | < 0.4 |
+| 7 | Orientation Time Ratio | Cognitive Load | lower is better | <= 0.4 | <= 0.55 | <= 0.7 | > 0.7 |
+| 8 | Warmup Precision | Cognitive Load | higher is better | >= 0.8 | >= 0.5 | >= 0.25 | < 0.25 |
+| 9 | Task Success Rate | Task Effectiveness | higher is better | = 1.0 | >= 0.75 | >= 0.5 | < 0.5 |
+| 10 | Tool Call Count | Task Effectiveness | lower is better | <= 5/10/20 | <= 10/20/35 | <= 20/35/50 | > 20/35/50 |
+| 11 | Speed Score | Task Effectiveness | higher is better | >= 0.8 | >= 0.6 | >= 0.4 | < 0.4 |
 
 *Tool Call Count thresholds shown as Easy/Medium/Hard.*
 
@@ -263,24 +317,26 @@ speed_score = baseline_time / actual_time
 
 ## 6. Agent Readiness Score (0–100)
 
-The Agent Readiness Score combines all nine metrics into a single number on a 0–100 scale.
+The Agent Readiness Score combines all eleven metrics into a single number on a 0–100 scale.
 
 ### Step 1: Normalize each metric to 0–1
 
-For **higher-is-better** metrics (Pathfinding Score, First Touch Rate, Focus Ratio, Token Efficiency Rate, Task Success Rate, Speed Score):
+For **higher-is-better** metrics (Pathfinding Score, First Touch Rate, Focus Ratio, Token Efficiency Rate, Warmup Precision, Task Success Rate, Speed Score):
 - Use the raw value directly (already 0–1, or cap at 1.0 for Focus Ratio).
 - For Focus Ratio: `normalized = min(focus_ratio, 1.0)`.
 
-For **lower-is-better** metrics (Revisit Waste Rate, Warmup Cost, Tool Call Count):
+For **lower-is-better** metrics (Revisit Waste Rate, Warmup Cost, Tool Call Count, Orientation Time Ratio):
 - **Revisit Waste Rate:** `normalized = 1 - revisit_waste_rate`
 - **Warmup Cost:** `normalized = 1 - min(warmup_cost / 15, 1.0)` (15 is the ceiling — beyond 15 tool calls, normalized value is 0)
 - **Tool Call Count:** `normalized = 1 - min(tool_call_count / max_poor_threshold, 1.0)` where `max_poor_threshold` is 20 (Easy), 35 (Medium), or 50 (Hard)
+- **Orientation Time Ratio:** `normalized = 1 - orientation_time_ratio`
 
 ### Step 2: Average within each dimension
 
 ```
 navigability_avg    = mean(pathfinding_score, first_touch_rate, 1 - revisit_waste_rate)
-cognitive_load_avg  = mean(min(focus_ratio, 1.0), 1 - warmup_cost_norm, token_efficiency_rate)
+cognitive_load_avg  = mean(min(focus_ratio, 1.0), 1 - warmup_cost_norm, token_efficiency_rate,
+                          1 - orientation_time_ratio, warmup_precision)
 effectiveness_avg   = mean(task_success_rate, 1 - tool_call_count_norm, speed_score)
 ```
 
