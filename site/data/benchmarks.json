@@ -1,0 +1,79 @@
+{
+  "repos": [
+    {
+      "name": "Express.js",
+      "category": "Web Framework",
+      "github": "expressjs/express",
+      "baseline": {
+        "total_tokens": 62578,
+        "total_time": 86.0,
+        "avg_backtrack": 0.18,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "after": {
+        "total_tokens": 41200,
+        "total_time": 58.3,
+        "avg_backtrack": 0.06,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "improvement": {
+        "tokens_pct": 34,
+        "time_pct": 32,
+        "backtrack_pct": 67
+      }
+    },
+    {
+      "name": "Commander.js",
+      "category": "CLI Tool",
+      "github": "tj/commander.js",
+      "baseline": {
+        "total_tokens": 48920,
+        "total_time": 72.4,
+        "avg_backtrack": 0.22,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "after": {
+        "total_tokens": 29350,
+        "total_time": 45.1,
+        "avg_backtrack": 0.05,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "improvement": {
+        "tokens_pct": 40,
+        "time_pct": 38,
+        "backtrack_pct": 77
+      }
+    },
+    {
+      "name": "Zod",
+      "category": "Utility Library",
+      "github": "colinhacks/zod",
+      "baseline": {
+        "total_tokens": 71340,
+        "total_time": 94.7,
+        "avg_backtrack": 0.25,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "after": {
+        "total_tokens": 45260,
+        "total_time": 61.2,
+        "avg_backtrack": 0.08,
+        "tasks_successful": 4,
+        "tasks_total": 4
+      },
+      "improvement": {
+        "tokens_pct": 37,
+        "time_pct": 35,
+        "backtrack_pct": 68
+      }
+    }
+  ],
+  "measured_at": "2026-03-15",
+  "plugin_version": "0.2.7",
+  "note": "Mock data — will be replaced with real measurements"
+}

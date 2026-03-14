@@ -25,27 +25,196 @@
   </section>
 
   <section id="philosophy">
-    <div class="container"></div>
+    <div class="container">
+      <h2 class="section-title">Why AI Harness?</h2>
+      <p class="section-subtitle">AI agents are only as good as the repo environment they work in. Without engineered context, agents waste tokens, backtrack, and produce inconsistent results.</p>
+      <p class="section-subtitle" style="margin-top: 12px;">The cycle: <strong>Measure</strong> (benchmark) &rarr; <strong>Improve</strong> (documentation) &rarr; <strong>Measure again</strong> = predictable improvement.</p>
+
+      <div class="comparison-grid">
+        <div class="comparison-card comparison-bad">
+          <h3>Without AI Harness</h3>
+          <ul>
+            <li>Scattered docs with no structure</li>
+            <li>Agents guess file locations</li>
+            <li>High token waste</li>
+            <li>Unpredictable results</li>
+          </ul>
+        </div>
+        <div class="comparison-card comparison-good">
+          <h3>With AI Harness</h3>
+          <ul>
+            <li>Structured knowledge base</li>
+            <li>Conditional triggers guide agents</li>
+            <li>Low token usage</li>
+            <li>Consistent results</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="garden-docs">
-    <div class="container"></div>
+    <div class="container">
+      <h2 class="section-title">garden-docs</h2>
+      <p class="section-subtitle">Keep your knowledge base in sync with your code</p>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-icon">1</span>
+          <div>
+            <strong>4-Layer Verification</strong>
+            <p>Meta, Skills, AI Context, Entry Point</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">2</span>
+          <div>
+            <strong>Automated Sync Detection</strong>
+            <p>Document-code sync verification</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">3</span>
+          <div>
+            <strong>Knowledge Base Optimization</strong>
+            <p>Structure optimization for AI consumption</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">4</span>
+          <div>
+            <strong>CLAUDE.md Authoring</strong>
+            <p>Conditional triggers for targeted context</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Benchmark Results</h3>
+      <div class="benchmark-grid" id="benchmark-grid">
+        <!-- Populated by JS from data/benchmarks.json -->
+      </div>
+    </div>
   </section>
 
   <section id="agent-benchmark">
-    <div class="container"></div>
+    <div class="container">
+      <h2 class="section-title">agent-benchmark</h2>
+      <p class="section-subtitle">Measure how well your repo supports AI agents</p>
+
+      <div class="metrics-row">
+        <div class="metric-card">
+          <span class="metric-label">Total Tokens</span>
+          <span class="metric-desc">Resource consumption</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Elapsed Time</span>
+          <span class="metric-desc">Task completion speed</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Backtrack Rate</span>
+          <span class="metric-desc">Navigation efficiency</span>
+        </div>
+      </div>
+
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+        </div>
+<pre class="terminal-body"><span class="t-green">&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+&#9553;</span>           Agent Benchmark Report                 <span class="t-green">&#9553;
+&#9553;</span>           my-project @ a1b2c3d                   <span class="t-green">&#9553;
+&#9560;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9563;</span>
+
+<span class="t-green">&#9472;&#9472;</span> Task Results <span class="t-green">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
+  #   Category        Status   Tokens    Time    Backtrack
+  1   Discovery       <span class="t-green">&#10003;</span>        12,340    42.0s   0.08
+  2   Comprehension   <span class="t-green">&#10003;</span>        18,920    31.5s   0.12
+  3   Diagnosis       <span class="t-green">&#10003;</span>        15,100    28.3s   0.05
+  4   Modification    <span class="t-green">&#10003;</span>        22,450    55.2s   0.15
+
+<span class="t-green">&#9472;&#9472;</span> Summary <span class="t-green">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span>
+  Successful: <span class="t-green">4/4</span>
+  Total Tokens: 68,810
+  Total Time: 157.0s
+  Avg Backtrack: 0.10
+<span class="t-green">&#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</span></pre>
+      </div>
+    </div>
   </section>
 
   <section id="platforms">
-    <div class="container"></div>
+    <div class="container">
+      <h2 class="section-title">Works Everywhere</h2>
+      <div class="platform-badges">
+        <div class="platform-badge">
+          <span class="platform-name">Claude Code</span>
+          <span class="platform-vendor">Anthropic</span>
+        </div>
+        <div class="platform-badge">
+          <span class="platform-name">Cursor</span>
+          <span class="platform-vendor">IDE</span>
+        </div>
+        <div class="platform-badge">
+          <span class="platform-name">Codex</span>
+          <span class="platform-vendor">OpenAI</span>
+        </div>
+        <div class="platform-badge">
+          <span class="platform-name">OpenCode</span>
+          <span class="platform-vendor">Open Source</span>
+        </div>
+        <div class="platform-badge">
+          <span class="platform-name">Gemini CLI</span>
+          <span class="platform-vendor">Google</span>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="install">
-    <div class="container"></div>
+    <div class="container">
+      <h2 class="section-title">Get Started</h2>
+      <div class="install-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="claude-code">Claude Code</button>
+          <button class="tab-btn" data-tab="cursor">Cursor</button>
+          <button class="tab-btn" data-tab="codex">Codex</button>
+          <button class="tab-btn" data-tab="opencode">OpenCode</button>
+          <button class="tab-btn" data-tab="gemini">Gemini CLI</button>
+        </div>
+        <div class="tab-panels">
+          <div class="tab-panel active" id="tab-claude-code">
+            <div class="install-command">
+              <code>claude plugin add just-useful-plugin</code>
+              <button class="copy-btn" aria-label="Copy install command">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-cursor">
+            <p class="tab-desc">Install via <code>.cursor-plugin/plugin.json</code>. See Cursor plugin docs for details.</p>
+          </div>
+          <div class="tab-panel" id="tab-codex">
+            <p class="tab-desc">See <code>.codex/INSTALL.md</code> for setup instructions.</p>
+          </div>
+          <div class="tab-panel" id="tab-opencode">
+            <p class="tab-desc">See <code>.opencode/INSTALL.md</code> for setup instructions.</p>
+          </div>
+          <div class="tab-panel" id="tab-gemini">
+            <p class="tab-desc">Copy or symlink the plugin directory and ensure <code>gemini-extension.json</code> is discoverable.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <footer>
-    <div class="container"></div>
+    <div class="container footer-content">
+      <a href="#" class="footer-link">View on GitHub</a>
+      <span class="footer-sep">&middot;</span>
+      <span>MIT License</span>
+      <span class="footer-sep">&middot;</span>
+      <span>v0.2.7</span>
+    </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
