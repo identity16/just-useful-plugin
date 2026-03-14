@@ -12,25 +12,60 @@
 </head>
 <body>
 
+  <!-- Hero -->
   <section id="hero">
+    <div class="hero-glow"></div>
     <div class="container hero-content">
-      <h1>just-useful-plugin</h1>
-      <p class="tagline">Predictable AI Harness Engineering for Any Repo</p>
-      <p class="sub-text">Measure, document, and optimize how AI agents navigate your codebase.</p>
-      <div class="install-command">
+      <h1 class="reveal">just-useful-plugin</h1>
+      <p class="tagline reveal reveal-d1">Predictable AI Harness Engineering for Any Repo</p>
+      <p class="sub-text reveal reveal-d2">Measure, document, and optimize how AI agents navigate your codebase.</p>
+      <div class="install-command reveal reveal-d3">
         <code>claude plugin install just-useful-plugin</code>
         <button class="copy-btn" aria-label="Copy install command">Copy</button>
       </div>
     </div>
   </section>
 
+  <!-- Philosophy -->
   <section id="philosophy">
+    <div class="section-divider"></div>
     <div class="container">
-      <h2 class="section-title">Why AI Harness?</h2>
-      <p class="section-subtitle">AI agents are only as good as the repo environment they work in. Without engineered context, agents waste tokens, backtrack, and produce inconsistent results.</p>
-      <p class="section-subtitle" style="margin-top: 12px;">The cycle: <strong>Measure</strong> (benchmark) &rarr; <strong>Improve</strong> (documentation) &rarr; <strong>Measure again</strong> = predictable improvement.</p>
+      <h2 class="section-title reveal">Why AI Harness?</h2>
+      <p class="section-subtitle reveal">AI agents are only as good as the repo environment they work in.</p>
 
-      <div class="comparison-grid">
+      <!-- Cycle diagram -->
+      <div class="cycle-diagram reveal">
+        <div class="cycle-step">
+          <div class="cycle-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="cycle-label">Measure</span>
+          <span class="cycle-desc">Benchmark agent performance</span>
+        </div>
+        <div class="cycle-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16" fill="none"><path d="M0 8h28m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="cycle-step">
+          <div class="cycle-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <span class="cycle-label">Improve</span>
+          <span class="cycle-desc">Engineer documentation</span>
+        </div>
+        <div class="cycle-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16" fill="none"><path d="M0 8h28m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="cycle-step">
+          <div class="cycle-icon cycle-icon--accent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="cycle-label">Verify</span>
+          <span class="cycle-desc">Confirm improvement</span>
+        </div>
+      </div>
+
+      <!-- Before/After comparison -->
+      <div class="comparison-grid reveal">
         <div class="comparison-card comparison-bad">
           <h3>Without AI Harness</h3>
           <ul>
@@ -39,6 +74,11 @@
             <li>High token waste</li>
             <li>Unpredictable results</li>
           </ul>
+          <div class="comparison-visual">
+            <div class="bar-stack">
+              <div class="bar-fill bar-bad" style="width:85%"><span>85% tokens wasted</span></div>
+            </div>
+          </div>
         </div>
         <div class="comparison-card comparison-good">
           <h3>With AI Harness</h3>
@@ -48,40 +88,94 @@
             <li>Low token usage</li>
             <li>Consistent results</li>
           </ul>
+          <div class="comparison-visual">
+            <div class="bar-stack">
+              <div class="bar-fill bar-good" style="width:35%"><span>35% tokens used</span></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- garden-docs -->
   <section id="garden-docs">
+    <div class="section-divider"></div>
     <div class="container">
-      <h2 class="section-title">garden-docs</h2>
-      <p class="section-subtitle">Keep your knowledge base in sync with your code</p>
+      <h2 class="section-title reveal">garden-docs</h2>
+      <p class="section-subtitle reveal">Keep your knowledge base in sync with your code</p>
 
-      <div class="feature-list">
+      <!-- 4-layer visualization -->
+      <div class="layer-stack reveal">
+        <div class="layer-item" data-layer="L4">
+          <div class="layer-badge">L4</div>
+          <div class="layer-info">
+            <strong>Meta</strong>
+            <span>Plugin metadata &amp; marketplace config</span>
+          </div>
+          <div class="layer-status">Verified</div>
+        </div>
+        <div class="layer-connector"></div>
+        <div class="layer-item" data-layer="L3">
+          <div class="layer-badge">L3</div>
+          <div class="layer-info">
+            <strong>Skills</strong>
+            <span>SKILL.md presence, frontmatter, references</span>
+          </div>
+          <div class="layer-status">Verified</div>
+        </div>
+        <div class="layer-connector"></div>
+        <div class="layer-item" data-layer="L2">
+          <div class="layer-badge">L2</div>
+          <div class="layer-info">
+            <strong>AI Context</strong>
+            <span>CLAUDE.md triggers, docs/ consistency</span>
+          </div>
+          <div class="layer-status">Verified</div>
+        </div>
+        <div class="layer-connector"></div>
+        <div class="layer-item" data-layer="L1">
+          <div class="layer-badge">L1</div>
+          <div class="layer-info">
+            <strong>Entry Point</strong>
+            <span>README, install commands, cross-references</span>
+          </div>
+          <div class="layer-status">Verified</div>
+        </div>
+      </div>
+
+      <div class="feature-list reveal">
         <div class="feature-item">
-          <span class="feature-icon">1</span>
+          <span class="feature-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          </span>
           <div>
             <strong>4-Layer Verification</strong>
             <p>Meta, Skills, AI Context, Entry Point</p>
           </div>
         </div>
         <div class="feature-item">
-          <span class="feature-icon">2</span>
+          <span class="feature-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </span>
           <div>
             <strong>Automated Sync Detection</strong>
             <p>Document-code sync verification</p>
           </div>
         </div>
         <div class="feature-item">
-          <span class="feature-icon">3</span>
+          <span class="feature-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          </span>
           <div>
-            <strong>Knowledge Base Optimization</strong>
+            <strong>KB Optimization</strong>
             <p>Structure optimization for AI consumption</p>
           </div>
         </div>
         <div class="feature-item">
-          <span class="feature-icon">4</span>
+          <span class="feature-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </span>
           <div>
             <strong>CLAUDE.md Authoring</strong>
             <p>Conditional triggers for targeted context</p>
@@ -89,40 +183,58 @@
         </div>
       </div>
 
-      <h3 class="subsection-title">Benchmark Results</h3>
-      <div class="benchmark-grid" id="benchmark-grid">
+      <h3 class="subsection-title reveal">Benchmark Results</h3>
+      <p class="benchmark-note reveal">garden-docs applied to 3 open-source repos. Before vs after comparison.</p>
+      <div class="benchmark-grid reveal" id="benchmark-grid">
         <!-- Populated by JS from data/benchmarks.json -->
       </div>
     </div>
   </section>
 
+  <!-- agent-benchmark -->
   <section id="agent-benchmark">
+    <div class="section-divider"></div>
     <div class="container">
-      <h2 class="section-title">agent-benchmark</h2>
-      <p class="section-subtitle">Measure how well your repo supports AI agents</p>
+      <h2 class="section-title reveal">agent-benchmark</h2>
+      <p class="section-subtitle reveal">Measure how well your repo supports AI agents</p>
 
-      <div class="metrics-row">
+      <div class="metrics-row reveal">
         <div class="metric-card">
+          <div class="metric-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <span class="metric-value" data-target="68810">0</span>
           <span class="metric-label">Total Tokens</span>
           <span class="metric-desc">Resource consumption</span>
         </div>
         <div class="metric-card">
+          <div class="metric-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <span class="metric-value" data-target="157">0</span>
           <span class="metric-label">Elapsed Time</span>
-          <span class="metric-desc">Task completion speed</span>
+          <span class="metric-desc">Seconds to complete</span>
         </div>
         <div class="metric-card">
+          <div class="metric-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="metric-value" data-target="10" data-suffix="%">0</span>
           <span class="metric-label">Backtrack Rate</span>
           <span class="metric-desc">Navigation efficiency</span>
         </div>
       </div>
 
-      <div class="terminal-block">
+      <div class="terminal-block reveal">
         <div class="terminal-header">
           <span class="terminal-dot red"></span>
           <span class="terminal-dot yellow"></span>
           <span class="terminal-dot green"></span>
+          <span class="terminal-title">agent-benchmark output</span>
         </div>
-<pre class="terminal-body"><span class="t-green">&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+<pre class="terminal-body"><span class="t-dim">$</span> <span class="t-white">claude</span> <span class="t-accent">agent-benchmark</span>
+
+<span class="t-green">&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
 &#9553;</span>           Agent Benchmark Report                 <span class="t-green">&#9553;
 &#9553;</span>           my-project @ a1b2c3d                   <span class="t-green">&#9553;
 &#9560;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9563;</span>
@@ -144,27 +256,45 @@
     </div>
   </section>
 
+  <!-- Platforms -->
   <section id="platforms">
+    <div class="section-divider"></div>
     <div class="container">
-      <h2 class="section-title">Works Everywhere</h2>
-      <div class="platform-badges">
+      <h2 class="section-title reveal">Works Everywhere</h2>
+      <p class="section-subtitle reveal">One plugin, five platforms. Install once, use across your entire toolkit.</p>
+      <div class="platform-badges reveal">
         <div class="platform-badge">
+          <div class="platform-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
           <span class="platform-name">Claude Code</span>
           <span class="platform-vendor">Anthropic</span>
         </div>
         <div class="platform-badge">
+          <div class="platform-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+          </div>
           <span class="platform-name">Cursor</span>
           <span class="platform-vendor">IDE</span>
         </div>
         <div class="platform-badge">
+          <div class="platform-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          </div>
           <span class="platform-name">Codex</span>
           <span class="platform-vendor">OpenAI</span>
         </div>
         <div class="platform-badge">
+          <div class="platform-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
           <span class="platform-name">OpenCode</span>
           <span class="platform-vendor">Open Source</span>
         </div>
         <div class="platform-badge">
+          <div class="platform-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
           <span class="platform-name">Gemini CLI</span>
           <span class="platform-vendor">Google</span>
         </div>
@@ -172,10 +302,12 @@
     </div>
   </section>
 
+  <!-- Install -->
   <section id="install">
+    <div class="section-divider"></div>
     <div class="container">
-      <h2 class="section-title">Get Started</h2>
-      <div class="install-tabs">
+      <h2 class="section-title reveal">Get Started</h2>
+      <div class="install-tabs reveal">
         <div class="tab-buttons">
           <button class="tab-btn active" data-tab="claude-code">Claude Code</button>
           <button class="tab-btn" data-tab="cursor">Cursor</button>

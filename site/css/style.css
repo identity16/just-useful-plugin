@@ -11,8 +11,11 @@
   --text-quaternary: rgba(240, 239, 244, 0.25);
   --accent: #5e6ad2;
   --accent-hover: #7c85e3;
+  --accent-glow: rgba(94, 106, 210, 0.15);
   --success: #4cc38a;
+  --success-dim: rgba(76, 195, 138, 0.12);
   --warning: #f2994a;
+  --warning-dim: rgba(242, 153, 74, 0.12);
 }
 
 /* Reset */
@@ -45,6 +48,31 @@ a {
   text-decoration: none;
 }
 
+/* ─── Scroll reveal animations ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+.reveal-d4 { transition-delay: 0.4s; }
+
+/* ─── Section divider ─── */
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border) 20%, rgba(94, 106, 210, 0.2) 50%, var(--border) 80%, transparent 100%);
+}
+
 /* Layout */
 .container {
   max-width: 1080px;
@@ -64,16 +92,24 @@ section {
   position: relative;
 }
 
-#hero::before {
-  content: '';
+.hero-glow {
   position: absolute;
-  top: 0;
+  top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  width: 800px;
-  height: 600px;
-  background: radial-gradient(ellipse at center, rgba(94, 106, 210, 0.08) 0%, transparent 70%);
+  width: 900px;
+  height: 700px;
+  background: radial-gradient(ellipse at center,
+    rgba(94, 106, 210, 0.1) 0%,
+    rgba(94, 106, 210, 0.04) 40%,
+    transparent 70%);
   pointer-events: none;
+  animation: pulse-glow 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
 }
 
 .hero-content {
@@ -120,11 +156,12 @@ section {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 20px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .install-command:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(94, 106, 210, 0.3);
+  box-shadow: 0 0 20px rgba(94, 106, 210, 0.06);
 }
 
 .install-command code {
@@ -142,13 +179,14 @@ section {
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   letter-spacing: -0.01em;
 }
 
 .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text);
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 /* ─── Section titles ─── */
@@ -185,21 +223,91 @@ section {
   font-size: 1.25rem;
   font-weight: 500;
   color: var(--text-secondary);
-  margin: 72px 0 32px;
+  margin: 72px 0 16px;
   text-align: center;
   letter-spacing: -0.02em;
 }
 
-/* ─── Philosophy — comparison cards ─── */
-#philosophy {
-  border-top: 1px solid var(--border-subtle);
+.benchmark-note {
+  font-size: 0.9rem;
+  color: var(--text-quaternary);
+  text-align: center;
+  margin-bottom: 32px;
 }
 
+/* ─── Philosophy ─── */
+
+/* Cycle diagram */
+.cycle-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 56px;
+  padding: 40px 0;
+}
+
+.cycle-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.cycle-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.4s ease;
+}
+
+.cycle-icon--accent {
+  background: var(--accent-glow);
+  border-color: rgba(94, 106, 210, 0.3);
+  color: var(--accent);
+}
+
+.cycle-step:hover .cycle-icon {
+  border-color: rgba(94, 106, 210, 0.4);
+  box-shadow: 0 0 24px rgba(94, 106, 210, 0.12);
+  transform: translateY(-2px);
+}
+
+.cycle-label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.cycle-desc {
+  font-size: 0.8rem;
+  color: var(--text-quaternary);
+  text-align: center;
+}
+
+.cycle-arrow {
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* Comparison cards */
 .comparison-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px;
-  margin-top: 56px;
   background: var(--border);
   border-radius: 16px;
   overflow: hidden;
@@ -208,6 +316,11 @@ section {
 .comparison-card {
   background: var(--surface);
   padding: 40px;
+  transition: background 0.3s ease;
+}
+
+.comparison-card:hover {
+  background: var(--surface-2);
 }
 
 .comparison-card h3 {
@@ -217,19 +330,15 @@ section {
   letter-spacing: -0.01em;
 }
 
-.comparison-bad h3 {
-  color: var(--text-tertiary);
-}
-
-.comparison-good h3 {
-  color: var(--success);
-}
+.comparison-bad h3 { color: var(--text-tertiary); }
+.comparison-good h3 { color: var(--success); }
 
 .comparison-card ul {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-bottom: 24px;
 }
 
 .comparison-card li {
@@ -245,7 +354,7 @@ section {
   content: "\2717";
   position: absolute;
   left: 0;
-  color: var(--text-quaternary);
+  color: var(--warning);
   font-size: 0.85rem;
 }
 
@@ -257,11 +366,131 @@ section {
   font-size: 0.85rem;
 }
 
-/* ─── garden-docs — feature list ─── */
-#garden-docs {
-  border-top: 1px solid var(--border-subtle);
+/* Comparison visual bars */
+.comparison-visual {
+  margin-top: 8px;
 }
 
+.bar-stack {
+  height: 28px;
+  background: var(--surface-3);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar-fill span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bar-bad {
+  background: linear-gradient(90deg, rgba(242, 153, 74, 0.3), rgba(242, 153, 74, 0.15));
+  color: var(--warning);
+}
+
+.bar-good {
+  background: linear-gradient(90deg, rgba(76, 195, 138, 0.3), rgba(76, 195, 138, 0.15));
+  color: var(--success);
+}
+
+/* ─── garden-docs ─── */
+
+/* 4-layer stack visualization */
+.layer-stack {
+  max-width: 600px;
+  margin: 0 auto 56px;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.layer-item:hover {
+  border-color: rgba(94, 106, 210, 0.3);
+  background: var(--surface-2);
+  transform: translateX(4px);
+}
+
+.layer-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.layer-item[data-layer="L4"] .layer-badge { background: rgba(94, 106, 210, 0.15); color: var(--accent); }
+.layer-item[data-layer="L3"] .layer-badge { background: rgba(76, 195, 138, 0.12); color: var(--success); }
+.layer-item[data-layer="L2"] .layer-badge { background: rgba(242, 153, 74, 0.12); color: var(--warning); }
+.layer-item[data-layer="L1"] .layer-badge { background: rgba(94, 106, 210, 0.15); color: var(--accent); }
+
+.layer-info {
+  flex: 1;
+}
+
+.layer-info strong {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.layer-info span {
+  font-size: 0.8rem;
+  color: var(--text-quaternary);
+}
+
+.layer-status {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--success);
+  background: var(--success-dim);
+  padding: 4px 12px;
+  border-radius: 100px;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: all 0.3s ease;
+}
+
+.layer-item:hover .layer-status,
+.layer-item.verified .layer-status {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.layer-connector {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+  margin: 0 0 0 42px;
+}
+
+/* Feature list */
 .feature-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -278,20 +507,23 @@ section {
   gap: 16px;
   background: var(--surface);
   padding: 28px 32px;
+  transition: background 0.3s ease;
+}
+
+.feature-item:hover {
+  background: var(--surface-2);
 }
 
 .feature-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  border-radius: 7px;
-  background: rgba(94, 106, 210, 0.12);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: var(--accent-glow);
   color: var(--accent);
-  font-weight: 600;
-  font-size: 0.8rem;
 }
 
 .feature-item strong {
@@ -322,6 +554,11 @@ section {
 .benchmark-card {
   background: var(--surface);
   padding: 28px;
+  transition: background 0.3s ease;
+}
+
+.benchmark-card:hover {
+  background: var(--surface-2);
 }
 
 .benchmark-card-header {
@@ -381,10 +618,7 @@ section {
   margin-top: 2px;
 }
 
-/* ─── agent-benchmark — metrics row ─── */
-#agent-benchmark {
-  border-top: 1px solid var(--border-subtle);
-}
+/* ─── agent-benchmark ─── */
 
 .metrics-row {
   display: flex;
@@ -397,9 +631,29 @@ section {
 
 .metric-card {
   background: var(--surface);
-  padding: 28px 32px;
+  padding: 32px;
   text-align: center;
   flex: 1;
+  transition: background 0.3s ease;
+}
+
+.metric-card:hover {
+  background: var(--surface-2);
+}
+
+.metric-icon-wrap {
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.metric-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .metric-label {
@@ -424,13 +678,27 @@ section {
   overflow: hidden;
   max-width: 640px;
   margin: 0 auto;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.terminal-block:hover {
+  border-color: rgba(94, 106, 210, 0.2);
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.3);
 }
 
 .terminal-header {
   display: flex;
+  align-items: center;
   gap: 8px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
+}
+
+.terminal-title {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-quaternary);
+  letter-spacing: 0.02em;
 }
 
 .terminal-dot {
@@ -451,14 +719,12 @@ section {
   color: var(--text-tertiary);
 }
 
-.t-green {
-  color: var(--success);
-}
+.t-green { color: var(--success); }
+.t-dim { color: var(--text-quaternary); }
+.t-white { color: var(--text); }
+.t-accent { color: var(--accent); }
 
 /* ─── Platforms ─── */
-#platforms {
-  border-top: 1px solid var(--border-subtle);
-}
 
 .platform-badges {
   display: flex;
@@ -470,9 +736,25 @@ section {
 
 .platform-badge {
   background: var(--surface);
-  padding: 28px 20px;
+  padding: 32px 20px;
   text-align: center;
   flex: 1;
+  transition: all 0.3s ease;
+}
+
+.platform-badge:hover {
+  background: var(--surface-2);
+}
+
+.platform-badge:hover .platform-icon {
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.platform-icon {
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
 }
 
 .platform-name {
@@ -491,9 +773,6 @@ section {
 }
 
 /* ─── Install tabs ─── */
-#install {
-  border-top: 1px solid var(--border-subtle);
-}
 
 .install-tabs {
   max-width: 560px;
@@ -518,7 +797,7 @@ section {
   cursor: pointer;
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
@@ -529,7 +808,7 @@ section {
 
 .tab-btn.active {
   color: var(--text);
-  border-bottom-color: var(--text);
+  border-bottom-color: var(--accent);
 }
 
 .tab-panel {
@@ -538,6 +817,12 @@ section {
 
 .tab-panel.active {
   display: block;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .tab-panel .install-command {
@@ -590,83 +875,39 @@ footer {
 
 /* ─── Responsive ─── */
 @media (max-width: 1024px) {
-  .hero-content h1 {
-    font-size: 3.5rem;
-  }
-
-  .section-title {
-    font-size: 2.25rem;
-  }
+  .hero-content h1 { font-size: 3.5rem; }
+  .section-title { font-size: 2.25rem; }
 }
 
 @media (max-width: 768px) {
-  section {
-    padding: 80px 0;
-  }
+  section { padding: 80px 0; }
+  #hero { padding: 120px 0 80px; }
+  .hero-content h1 { font-size: 2.5rem; }
+  .hero-content .tagline { font-size: 1.2rem; }
+  .section-title { font-size: 1.85rem; }
 
-  #hero {
-    padding: 120px 0 80px;
-  }
-
-  .hero-content h1 {
-    font-size: 2.5rem;
-  }
-
-  .hero-content .tagline {
-    font-size: 1.2rem;
-  }
-
-  .section-title {
-    font-size: 1.85rem;
-  }
+  .cycle-diagram { flex-direction: column; gap: 12px; }
+  .cycle-arrow { transform: rotate(90deg); }
 
   .comparison-grid,
-  .feature-list {
-    grid-template-columns: 1fr;
-  }
+  .feature-list { grid-template-columns: 1fr; }
+  .benchmark-grid { grid-template-columns: 1fr; }
+  .metrics-row { flex-direction: column; }
+  .platform-badges { flex-direction: column; }
+  .tab-buttons { flex-wrap: wrap; }
 
-  .benchmark-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .metrics-row {
-    flex-direction: column;
-  }
-
-  .platform-badges {
-    flex-direction: column;
-  }
-
-  .tab-buttons {
-    flex-wrap: wrap;
-  }
+  .layer-stack { margin: 0 auto 40px; }
 }
 
 @media (max-width: 480px) {
-  #hero {
-    padding: 100px 0 60px;
-  }
+  #hero { padding: 100px 0 60px; }
+  .hero-content h1 { font-size: 2rem; }
+  section { padding: 60px 0; }
 
-  .hero-content h1 {
-    font-size: 2rem;
-  }
+  .terminal-body { font-size: 0.65rem; padding: 16px; }
+  .install-command { flex-direction: column; gap: 8px; width: 100%; }
+  .install-command code { font-size: 0.8rem; }
 
-  section {
-    padding: 60px 0;
-  }
-
-  .terminal-body {
-    font-size: 0.65rem;
-    padding: 16px;
-  }
-
-  .install-command {
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .install-command code {
-    font-size: 0.8rem;
-  }
+  .cycle-step { min-width: auto; }
+  .metric-value { font-size: 1.5rem; }
 }
