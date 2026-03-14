@@ -14,8 +14,9 @@
 
 3. Update these files:
    - `README.md` — add to Skills table
-   - `.claude-plugin/plugin.json` — update `description`, `keywords`, bump `version` (minor for new skill)
+   - `.claude-plugin/plugin.json` — update `description`, `keywords`, bump `version` (minor for new skill, patch for existing skill changes)
    - `.claude-plugin/marketplace.json` — sync `description` and `version` with plugin.json
+   - `.cursor-plugin/plugin.json` — sync `description`, `keywords`, and `version` with plugin.json
 
 4. Run garden-docs skill to verify document consistency across all layers.
 

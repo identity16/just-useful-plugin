@@ -1,10 +1,10 @@
 {
   "name": "just-useful-plugin",
-  "description": "Practical skills: document gardening, knowledge base maintenance, and doc-code sync workflows",
-  "version": "0.1.0",
+  "description": "Practical skills for Claude Code: document gardening, knowledge base maintenance, doc-code sync workflows, and agent benchmarking",
+  "version": "0.2.2",
   "author": "m2",
   "license": "MIT",
-  "keywords": ["skills", "documentation", "gardening", "knowledge-base", "claude-md"],
+  "keywords": ["skills", "documentation", "gardening", "knowledge-base", "claude-md", "benchmark", "agent-evaluation", "metrics"],
   "directories": {
     "skills": "./skills/"
   }

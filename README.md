@@ -1,6 +1,6 @@
 # just-useful-plugin
 
-Practical skills for AI coding agents — document gardening, knowledge base maintenance, and doc-code sync workflows.
+Practical skills for AI coding agents — document gardening, knowledge base maintenance, doc-code sync workflows, and agent benchmarking.
 
 ## Skills
 
