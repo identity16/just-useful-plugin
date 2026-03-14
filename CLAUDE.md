@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## References
 
-- When understanding project structure or platform support → read `docs/architecture.md`
+- When understanding project structure → read `docs/architecture.md`
 - When adding/modifying skills or updating plugin metadata → read `docs/conventions.md`
 - When completing a meaningful change (feature, fix, refactor) → read `docs/conventions.md` §Version Bumping
 - When working on agent-benchmark metrics (tokens, time, backtracking) → read `skills/agent-benchmark/references/metrics.md`

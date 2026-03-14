@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A multi-platform Claude Code plugin that provides prompt-based skills for AI coding agents. No code — skills are pure Markdown documents that instruct agents how to perform specific workflows.
+A Claude Code plugin that provides prompt-based skills for AI coding agents. No code — skills are pure Markdown documents that instruct agents how to perform specific workflows.
 
 ## Plugin Structure
 
@@ -11,10 +11,6 @@ just-useful-plugin/
 ├── .claude-plugin/          # Claude Code platform config
 │   ├── plugin.json          # Plugin metadata (name, version, keywords)
 │   └── marketplace.json     # Marketplace listing
-├── .cursor-plugin/          # Cursor IDE config
-├── .codex/                  # Codex config
-├── .opencode/               # OpenCode config (JS plugin loader)
-├── gemini-extension.json    # Gemini CLI config
 ├── skills/                  # All skills live here
 │   └── {skill-name}/
 │       ├── SKILL.md         # Required: YAML frontmatter + skill prompt
@@ -40,17 +36,9 @@ A skill is a directory under `skills/` containing at minimum a `SKILL.md` file.
 - Must be referenced from SKILL.md (no orphan files)
 - Contains detailed specs that would bloat SKILL.md if inlined (metrics definitions, templates, format specs)
 
-## Platform Support
+## Platform
 
-The same skills work across 5 platforms. Each platform has its own config format:
-
-| Platform | Discovery Mechanism |
-|----------|-------------------|
-| Claude Code | `.claude-plugin/plugin.json` → scans `skills/*/SKILL.md` |
-| Cursor | `.cursor-plugin/plugin.json` |
-| Codex | `.codex/INSTALL.md` (manual setup) |
-| OpenCode | `.opencode/plugins/just-useful-plugin.js` (dynamic loader) |
-| Gemini CLI | `gemini-extension.json` + `GEMINI.md` (tool mappings) |
+Claude Code only. Discovery via `.claude-plugin/plugin.json` → scans `skills/*/SKILL.md`.
 
 ## Version Sync
 

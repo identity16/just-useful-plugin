@@ -355,10 +355,9 @@ git commit -m "feat: add agent-benchmark section to landing page"
 
 - [ ] **Step 1: Add platforms section HTML**
 
-Section title: "Works Everywhere"
-- 5 platform cards/badges: Claude Code, Cursor IDE, Codex, OpenCode, Gemini CLI
-- Each with name and a brief label (e.g., "Anthropic", "IDE", "OpenAI", etc.)
-- No external images needed — use text/CSS-styled badges
+Section title: "Built for Claude Code"
+- Single Claude Code badge
+- No external images needed — use text/CSS-styled badge
 
 - [ ] **Step 2: Style as horizontal badge row**
 
@@ -385,12 +384,8 @@ Section title: "Get Started"
 - Tab content panels with platform-specific install commands
 - Each command has a copy button
 
-Platform install commands (from README.md):
-- Claude Code: `claude plugin add just-useful-plugin`
-- Cursor: manual setup instructions
-- Codex: manual setup instructions
-- OpenCode: manual setup instructions
-- Gemini CLI: manual setup instructions
+Install command:
+- Claude Code: `claude plugin install just-useful-plugin`
 
 - [ ] **Step 2: Add tab switching JS**
 
@@ -535,15 +530,14 @@ Push to main, wait for Actions workflow to complete, then open the published URL
 **Files:**
 - Modify: `.claude-plugin/plugin.json`
 - Modify: `.claude-plugin/marketplace.json`
-- Modify: `.cursor-plugin/plugin.json`
 
 - [ ] **Step 1: Bump version to 0.3.0**
 
-This is a new feature (landing page with benchmark data), warranting a minor bump. Update version in all 3 files from `0.2.7` to `0.3.0`.
+This is a new feature (landing page with benchmark data), warranting a minor bump. Update version in both files from `0.2.7` to `0.3.0`.
 
 - [ ] **Step 2: Commit version bump**
 
 ```bash
-git add .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json
+git add .claude-plugin/plugin.json .claude-plugin/marketplace.json
 git commit -m "chore: bump version to 0.3.0"
 ```

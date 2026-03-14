@@ -38,15 +38,11 @@ The plugin helps engineers predictably set up any repo so AI agents work reliabl
 - Feature summary (no before/after — this IS the measurement tool)
 - What metrics it measures, how to use it
 
-### 5. Platform Support
-- 5 supported platforms with icons/logos
-- Claude Code, Cursor, Codex, OpenCode, Gemini CLI
-
-### 6. Installation
-- Tabbed UI with per-platform install commands
+### 5. Installation
+- Single install command for Claude Code
 - Copy-to-clipboard functionality
 
-### 7. Footer
+### 6. Footer
 - GitHub repo link, license
 
 ## Benchmark Measurement Plan

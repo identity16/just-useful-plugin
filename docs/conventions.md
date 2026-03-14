@@ -16,7 +16,6 @@
    - `README.md` — add to Skills table
    - `.claude-plugin/plugin.json` — update `description`, `keywords`, bump `version` (minor for new skill, patch for existing skill changes)
    - `.claude-plugin/marketplace.json` — sync `description` and `version` with plugin.json
-   - `.cursor-plugin/plugin.json` — sync `description`, `keywords`, and `version` with plugin.json
 
 4. Run garden-docs skill to verify document consistency across all layers.
 
@@ -94,7 +93,6 @@ Phase 1 complete: 4 tasks generated. Starting Phase 2 (agent execution).
 **동기화 대상 (모두 같은 버전이어야 함):**
 - `.claude-plugin/plugin.json`
 - `.claude-plugin/marketplace.json`
-- `.cursor-plugin/plugin.json`
 
 ## Commit Messages
 

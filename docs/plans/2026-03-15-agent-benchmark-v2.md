@@ -687,21 +687,19 @@ git commit -m "docs: update CLAUDE.md references for agent-benchmark v2"
 **Files:**
 - Modify: `.claude-plugin/plugin.json`
 - Modify: `.claude-plugin/marketplace.json`
-- Modify: `.cursor-plugin/plugin.json`
 
 Per `docs/conventions.md`: existing skill modification = patch bump.
 
-- [ ] **Step 1: Bump version in all 3 files**
+- [ ] **Step 1: Bump version in both files**
 
 Change `0.2.7` to `0.2.8` in:
 - `.claude-plugin/plugin.json`
 - `.claude-plugin/marketplace.json`
-- `.cursor-plugin/plugin.json`
 
 - [ ] **Step 2: Commit**
 
 ```bash
-git add .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json
+git add .claude-plugin/plugin.json .claude-plugin/marketplace.json
 git commit -m "chore: bump version to 0.2.8"
 ```
 
