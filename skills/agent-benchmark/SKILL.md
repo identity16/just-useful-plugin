@@ -12,7 +12,7 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 - Never report scores without actually running benchmark tasks
 - Always generate tasks dynamically from the target repo — never use hardcoded tasks
 - Always use hooks (PreToolUse/PostToolUse) for log capture — never rely on agent self-reporting
-- Always run benchmark agents in worktree isolation — never let them modify the actual repo
+- Always run benchmark agents in worktree isolation — use `isolation: "worktree"` on every Agent dispatch (basic mode) or pre-configured worktrees (A/B mode). Never let agents modify the actual repo.
 - Never skip the repo analysis step — task quality depends on accurate code element extraction
 - Always clean up hooks and worktrees after benchmark completion
 
@@ -161,19 +161,29 @@ Each log entry records:
 
 Single execution: run each task sequentially with a subagent.
 
-- **Isolation**: Each subagent runs in a **git worktree** (created via `git worktree add`)
+- **Isolation**: Every subagent **must** be dispatched with `isolation: "worktree"` on the `Agent` tool — even for a single task. This creates a temporary git worktree automatically; do **not** use manual `git worktree add`.
 - **Subagent scope**: The subagent receives only the task description — no hints, no expected answers
 - **No commits**: Subagents must not commit or push. Modification tasks are verified by file diff
-- **Dispatch**: Use the `Agent` tool to launch each task subagent
+- **Dispatch**: Use the `Agent` tool with `isolation: "worktree"` for every task
+
+```python
+# Every task dispatch MUST include isolation: "worktree"
+Agent(
+    prompt="<task description>",
+    isolation="worktree",   # ← 필수. 생략 금지.
+    description="benchmark task N"
+)
+```
 
 ```
-Main Agent                          Subagent (in worktree)
-───────────                         ──────────────────────
+Main Agent                          Subagent (in isolated worktree)
+───────────                         ───────────────────────────────
 [Generate task]
      │
-     ├──dispatch──→  Execute task using available tools
-     │               (Glob, Grep, Read, Bash)
-     │               ← return answer + completion status
+     ├──dispatch (isolation: "worktree")──→  Execute task
+     │                                       (Glob, Grep, Read, Bash)
+     │                                       ← return answer + completion status
+     │                                       worktree auto-cleaned if no changes
      │
 [Next task]
 ```
@@ -185,8 +195,8 @@ For comparing two environment configurations (e.g., with vs without CLAUDE.md, d
 1. **User defines 2 conditions**:
    - Condition A: baseline (e.g., repo as-is)
    - Condition B: treatment (e.g., repo with improved docs)
-2. **Create 2 worktrees**: one per condition, apply configuration differences
-3. **Run identical tasks on both**: same task set, same order
+2. **Create 2 worktrees manually** (`git worktree add`): one per condition, apply configuration differences (e.g., add/remove CLAUDE.md). A/B mode requires manual worktree setup because each condition needs different file modifications applied before agent execution.
+3. **Run identical tasks on both**: same task set, same order. Subagents do **not** use `isolation: "worktree"` in A/B mode — they run directly in the pre-configured worktree paths instead.
 4. **Capture separate logs**: one JSONL per condition
 5. **Generate comparison report**: side-by-side metrics
 
@@ -256,7 +266,9 @@ Generate the report in terminal using the format defined in `references/report-f
 
 After report generation:
 1. **Remove hooks**: Uninstall PreToolUse/PostToolUse hooks
-2. **Clean worktrees**: `git worktree remove` for all benchmark worktrees
+2. **Clean worktrees**:
+   - Basic mode: `isolation: "worktree"` auto-cleans worktrees with no changes. For Modification tasks where files were changed, the Agent tool returns the worktree path — run `git worktree remove <path>` to clean up.
+   - A/B mode: `git worktree remove` for both condition worktrees.
 3. **Preserve logs**: Keep JSONL log at `/tmp/` (user can delete manually)
 
 ---
@@ -279,5 +291,6 @@ After report generation:
 | "태스크 하나만 돌려보면 충분하다" | 카테고리별 최소 1개씩 4개는 필요하다 |
 | "에이전트가 직접 도구 호출을 보고하면 된다" | 자기 보고는 누락 가능. hooks로 외부 캡처해야 한다 |
 | "실제 레포에서 바로 수정 태스크를 돌려도 된다" | worktree isolation 필수. 실제 코드를 오염시키면 안 된다 |
+| "태스크 하나뿐이니 isolation 없이 바로 돌려도 된다" | 단일 태스크라도 `isolation: "worktree"` 필수. 수정 작업이 main을 오염시킬 수 있다 |
 | "점수가 낮으면 모델이 나쁜 것이다" | 이 벤치마크는 환경 품질을 측정한다. 모델 성능 측정이 아니다 |
 | "hooks 로그가 없어도 대략 추정하면 된다" | 추정은 벤치마크가 아니다. 정확한 데이터 수집이 핵심 |

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Pre-commit hook: warn if skill files changed without version bump in plugin.json
+
+SKILL_CHANGED=$(git diff --cached --name-only -- 'skills/' | grep -c '.')
+VERSION_CHANGED=$(git diff --cached --name-only -- '.claude-plugin/plugin.json' '.claude-plugin/marketplace.json' '.cursor-plugin/plugin.json' | grep -c '.')
+
+if [ "$SKILL_CHANGED" -gt 0 ] && [ "$VERSION_CHANGED" -eq 0 ]; then
+  echo ""
+  echo "⚠  Skills changed but plugin version not bumped!"
+  echo ""
+  echo "   Changed skill files:"
+  git diff --cached --name-only -- 'skills/' | sed 's/^/     /'
+  echo ""
+  echo "   Run version bump on all 3 files (see docs/conventions.md §Version Bumping):"
+  echo "     .claude-plugin/plugin.json"
+  echo "     .claude-plugin/marketplace.json"
+  echo "     .cursor-plugin/plugin.json"
+  echo ""
+  echo "   To skip this check: git commit --no-verify"
+  exit 1
+fi
