@@ -26,8 +26,8 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 Phase 1: Repo Analysis          Phase 2: Agent Execution         Phase 3: Report
 & Task Generation               & Hook Capture                   & Cleanup
 ─────────────────────           ─────────────────────            ─────────────────
-[1] Scan repo structure         [4] Setup hooks (JSONL log)      [7] Parse logs
-[2] Extract code elements       [5] Run agent(s) in worktree     [8] Calculate metrics
+[1] Scan repo structure         [4] Setup hooks (JSONL log)      [7] Parse logs (by session_id)
+[2] Extract code elements       [5] Run agents in parallel       [8] Calculate metrics
 [3] Generate dynamic tasks      [6] Capture tool calls           [9] Generate report
                                                                  [10] Cleanup
 ```
@@ -113,7 +113,7 @@ Claude Code hooks receive JSON on **stdin** containing tool information. The `to
         "hooks": [
           {
             "type": "command",
-            "command": "jq -c '{phase: \"pre\", tool: .tool_name, file_path: (.tool_input.file_path // .tool_input.path // \"\"), timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
+            "command": "jq -c '{phase: \"pre\", tool: .tool_name, file_path: (.tool_input.file_path // .tool_input.path // \"\"), session_id: .session_id, timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
           }
         ]
       }
@@ -124,7 +124,7 @@ Claude Code hooks receive JSON on **stdin** containing tool information. The `to
         "hooks": [
           {
             "type": "command",
-            "command": "jq -c '{phase: \"post\", tool: .tool_name, timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
+            "command": "jq -c '{phase: \"post\", tool: .tool_name, session_id: .session_id, timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
           }
         ]
       }
@@ -136,10 +136,10 @@ Claude Code hooks receive JSON on **stdin** containing tool information. The `to
 **Important:**
 - Replace `TIMESTAMP` in the file path with the actual benchmark run timestamp before writing the settings file.
 - After the benchmark completes, **remove only the `hooks` key** from `settings.local.json` to restore normal operation (preserve other keys).
-- Hooks apply project-wide, so the main benchmark runner's own tool calls are also captured. Use **timestamp gaps** between tasks to segment the log: record task start/end timestamps and filter log entries by time range during Phase 3 log parsing.
+- Hooks apply project-wide, so the main benchmark runner's own tool calls are also captured. Use `session_id` to correlate log entries to specific tasks — each subagent runs in its own session, so the benchmark runner records each subagent's `session_id` and maps it to a task during Phase 3 log parsing.
 
 **Stdin JSON structure (provided by Claude Code):**
-- `session_id`: Session identifier
+- `session_id`: Session identifier (unique per subagent — used to correlate logs to tasks)
 - `tool_name`: Tool identifier (e.g., `"Read"`, `"Grep"`, `"Bash"`, `"Glob"`, `"Edit"`, `"Write"`, `"Agent"`)
 - `tool_input`: Tool parameters object (contains `file_path`, `pattern`, `command`, etc. depending on tool)
 - `tool_use_id`: Unique tool call identifier
@@ -151,42 +151,50 @@ Each log entry records:
   "phase": "pre|post",
   "tool": "Grep|Read|Bash|...",
   "file_path": "/path/to/file",
+  "session_id": "session-abc123",
   "timestamp": "ISO-8601"
 }
 ```
 
-> **Note:** `task_id` is not available in hook stdin. The benchmark runner must track task boundaries by recording timestamps before/after each subagent dispatch, then correlate log entries by time range during log parsing (Phase 3, step [7]).
+> **Note:** Each subagent dispatch gets a unique `session_id`. The benchmark runner records the mapping of `session_id → task_id` from each Agent dispatch, then uses this mapping to correlate JSONL log entries to tasks during Phase 3 log parsing. This enables parallel task execution without log entry ambiguity.
 
 ### [5] Agent Execution — Basic Mode
 
-Single execution: run each task sequentially with a subagent.
+**Parallel execution**: dispatch all tasks concurrently as subagents for maximum speed.
 
 - **Isolation**: Every subagent **must** be dispatched with `isolation: "worktree"` on the `Agent` tool — even for a single task. This creates a temporary git worktree automatically; do **not** use manual `git worktree add`.
 - **Subagent scope**: The subagent receives only the task description — no hints, no expected answers
 - **No commits**: Subagents must not commit or push. Modification tasks are verified by file diff
 - **Dispatch**: Use the `Agent` tool with `isolation: "worktree"` for every task
+- **Parallelism**: Dispatch **all tasks in a single message** with multiple Agent tool calls. Each subagent gets its own worktree and session, so there are no conflicts between concurrent tasks. Record the returned `agentId` (= session_id) for each task to correlate logs in Phase 3.
 
 ```python
-# Every task dispatch MUST include isolation: "worktree"
-Agent(
-    prompt="<task description>",
-    isolation="worktree",   # ← 필수. 생략 금지.
-    description="benchmark task N"
-)
+# Dispatch ALL tasks in parallel in a single message
+# Each gets its own isolated worktree — no conflicts
+Agent(prompt="<task 1>", isolation="worktree", description="benchmark task 1")
+Agent(prompt="<task 2>", isolation="worktree", description="benchmark task 2")
+Agent(prompt="<task 3>", isolation="worktree", description="benchmark task 3")
+Agent(prompt="<task 4>", isolation="worktree", description="benchmark task 4")
+# ... all in one message block
 ```
 
 ```
-Main Agent                          Subagent (in isolated worktree)
-───────────                         ───────────────────────────────
-[Generate task]
+Main Agent
+───────────
+[Generate all tasks]
      │
-     ├──dispatch (isolation: "worktree")──→  Execute task
-     │                                       (Glob, Grep, Read, Bash)
-     │                                       ← return answer + completion status
-     │                                       worktree auto-cleaned if no changes
+     ├──dispatch task 1 (isolation: "worktree")──→  Subagent 1 (worktree-1)
+     ├──dispatch task 2 (isolation: "worktree")──→  Subagent 2 (worktree-2)
+     ├──dispatch task 3 (isolation: "worktree")──→  Subagent 3 (worktree-3)
+     ├──dispatch task 4 (isolation: "worktree")──→  Subagent 4 (worktree-4)
+     │         (all running concurrently)
      │
-[Next task]
+     ├── all complete ← collect results + agentIds
+     │
+[Map agentId → task for log correlation]
 ```
+
+**Session-to-task mapping**: After all agents complete, record the `agentId` returned by each Agent dispatch. This `agentId` corresponds to the `session_id` in JSONL log entries, enabling accurate per-task log correlation even with concurrent execution.
 
 ### [6] Agent Execution — Advanced Mode (A/B Comparison)
 
@@ -196,22 +204,24 @@ For comparing two environment configurations (e.g., with vs without CLAUDE.md, d
    - Condition A: baseline (e.g., repo as-is)
    - Condition B: treatment (e.g., repo with improved docs)
 2. **Create 2 worktrees manually** (`git worktree add`): one per condition, apply configuration differences (e.g., add/remove CLAUDE.md). A/B mode requires manual worktree setup because each condition needs different file modifications applied before agent execution.
-3. **Run identical tasks on both**: same task set, same order. Subagents do **not** use `isolation: "worktree"` in A/B mode — they run directly in the pre-configured worktree paths instead.
-4. **Capture separate logs**: one JSONL per condition
+3. **Run all tasks on both conditions in parallel**: Dispatch all tasks across both conditions concurrently in a single message. Subagents do **not** use `isolation: "worktree"` in A/B mode — they run directly in the pre-configured worktree paths instead.
+4. **Capture logs with session_id**: All logs go to condition-specific JSONL files. Use `session_id` to correlate entries to tasks.
 5. **Generate comparison report**: side-by-side metrics
 
 ```
-Condition A (worktree-a)              Condition B (worktree-b)
-────────────────────────              ────────────────────────
-Task 1 → log-a.jsonl                 Task 1 → log-b.jsonl
-Task 2 → log-a.jsonl                 Task 2 → log-b.jsonl
-  ...                                  ...
-Task N → log-a.jsonl                 Task N → log-b.jsonl
-         │                                     │
-         └────────── Compare ──────────────────┘
-                        │
-               Comparison Report
+                    ┌── Task 1-A (worktree-a) ──→ log-a.jsonl
+                    ├── Task 2-A (worktree-a) ──→ log-a.jsonl
+All dispatched      ├── Task 1-B (worktree-b) ──→ log-b.jsonl
+concurrently  ──────├── Task 2-B (worktree-b) ──→ log-b.jsonl
+                    ├── ...
+                    └── Task N-B (worktree-b) ──→ log-b.jsonl
+                              │
+                    All complete → Compare
+                              │
+                     Comparison Report
 ```
+
+**Note**: Tasks within the same worktree run concurrently. Since subagents only read files (Discovery, Comprehension, Diagnosis tasks), concurrent access is safe. For Modification tasks that write files, each subagent operates on different files as determined by the task, minimizing conflict risk.
 
 ---
 
@@ -219,8 +229,9 @@ Task N → log-a.jsonl                 Task N → log-b.jsonl
 
 ### [7] Log Parsing
 
-Read the JSONL log file(s) and extract per-task data:
+Read the JSONL log file(s) and extract per-task data using the `session_id → task` mapping recorded during Phase 2:
 
+- Group log entries by `session_id`, then map each group to its task using the recorded mapping
 - Total tokens consumed (input + output, subagents summed into parent)
 - Files accessed and access counts (for Backtrack Rate: unique files N, total accesses S)
 - Task completion status (correct/incorrect)
@@ -294,3 +305,4 @@ After report generation:
 | "태스크 하나뿐이니 isolation 없이 바로 돌려도 된다" | 단일 태스크라도 `isolation: "worktree"` 필수. 수정 작업이 main을 오염시킬 수 있다 |
 | "점수가 낮으면 모델이 나쁜 것이다" | 이 벤치마크는 환경 품질을 측정한다. 모델 성능 측정이 아니다 |
 | "hooks 로그가 없어도 대략 추정하면 된다" | 추정은 벤치마크가 아니다. 정확한 데이터 수집이 핵심 |
+| "태스크를 하나씩 순서대로 돌려야 한다" | 모든 태스크는 독립적이다. 병렬 dispatch로 시간을 절약해야 한다 |
