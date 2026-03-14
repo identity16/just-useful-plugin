@@ -1,11 +1,11 @@
 ---
 name: agent-benchmark
-description: Use when measuring agent task performance in a codebase, evaluating environment setup quality for AI agents, benchmarking agent navigation efficiency, running A/B comparisons of documentation/context configurations, or assessing Agent Readiness Score
+description: Use when measuring agent task performance in a codebase, evaluating environment setup quality for AI agents, benchmarking agent resource efficiency, or running A/B comparisons of documentation/context configurations
 ---
 
 # Agent Benchmark
 
-Measure how well a codebase environment supports AI agent task performance. Uses the Lostness Metric (Smith, 1996) and DevEx Framework (Noda & Storey, 2023) to quantify agent navigability, cognitive load, and task effectiveness.
+Measure how well a codebase environment supports AI agent task performance. Compares resource efficiency (tokens, time, backtracking) across environment configurations using A/B benchmarking.
 
 <HARD-GATE>
 
@@ -75,18 +75,18 @@ Generate 4–8 tasks per repo using extracted code elements. Reference `referenc
 
 | Category | Example | Measures |
 |----------|---------|----------|
-| **Discovery** | "Find the entry point for the API server" | Lostness (optimal vs actual path) |
-| **Comprehension** | "List all modules that depend on the auth package" | Comprehension depth |
-| **Diagnosis** | "Find where ValidationError is thrown and trace its handler" | Search efficiency |
-| **Modification** | "Add a new field to the User model" (in worktree) | End-to-end task completion |
+| **Discovery** | "Find the entry point for the API server" | Token/time efficiency for navigation |
+| **Comprehension** | "List all modules that depend on the auth package" | Token/time efficiency for understanding |
+| **Diagnosis** | "Find where ValidationError is thrown and trace its handler" | Token/time efficiency for search |
+| **Modification** | "Add a new field to the User model" (in worktree) | Token/time efficiency for end-to-end task |
 
 **Each generated task must include:**
 - Clear task description
 - Expected answer (ground truth, verified by the benchmark runner)
-- Expected optimal tool call count (**R** value for Lostness calculation)
+- Expected relevant files list (for Backtrack Rate calculation)
 - Task category label
 
-**R value determination**: The benchmark runner solves the task first (or uses repo analysis results) to establish the minimum number of tool calls needed. This becomes the optimal path length **R**.
+**Expected files determination**: The benchmark runner solves the task first (or uses repo analysis results) to establish the relevant files list. This is used to calculate Backtrack Rate (unique files accessed vs total file accesses).
 
 ---
 
@@ -209,56 +209,44 @@ Task N → log-a.jsonl                 Task N → log-b.jsonl
 
 ### [7] Log Parsing
 
-Read the JSONL log file(s) and extract per-task metrics:
+Read the JSONL log file(s) and extract per-task data:
 
-- Total tool calls per task (**S** — actual steps)
-- Unique files/nodes visited (**N**)
-- Optimal tool calls (**R** — from task definition)
-- Task completion status (correct/incorrect/partial)
-- Time spent (first to last timestamp per task)
+- Total tokens consumed (input + output, subagents summed into parent)
+- Files accessed and access counts (for Backtrack Rate: unique files N, total accesses S)
+- Task completion status (correct/incorrect)
+- Timestamps (first and last tool call per task, for Elapsed Time)
 
 ### [8] Metric Calculation
 
 Calculate metrics as defined in `references/metrics.md`:
 
-- **Lostness score** per task: `L = sqrt((N/S - 1)² + (R/N - 1)²)`
+- **Total Tokens** per task: sum of all tokens consumed during task execution
+- **Elapsed Time** per task: `last_tool_call_timestamp - first_tool_call_timestamp`
+- **Backtrack Rate** per task: `(S - N) / S`
 
-Refer to `references/metrics.md` for all 11 metrics across 3 dimensions:
-- **Navigability** (40%): Pathfinding Score, First Touch Rate, Revisit Waste Rate
-- **Cognitive Load** (35%): Focus Ratio, Warmup Cost, Token Efficiency Rate, Orientation Time Ratio, Warmup Precision
-- **Task Effectiveness** (25%): Task Success Rate, Tool Call Count, Speed Score
+Only successful tasks are included in summary statistics.
 
-### [9] Grading & Agent Readiness Score
+### [9] A/B Ratio Calculation (Comparison Mode Only)
 
-**Per-task grading:**
+For each successful task present in both conditions, compute per-metric ratios:
 
-| Grade | Lostness (L) | Interpretation |
-|-------|-------------|----------------|
-| **Excellent** | L < 0.4 | Agent navigated efficiently |
-| **Good** | 0.4 ≤ L < 0.6 | Minor detours but effective |
-| **Fair** | 0.6 ≤ L < 0.8 | Significant wandering |
-| **Poor** | L ≥ 0.8 | Agent was lost |
+```
+token_ratio     = tokens_A / tokens_B
+time_ratio      = time_A / time_B
+backtrack_ratio = backtrack_A / backtrack_B
+```
 
-**Agent Readiness Score (0–100):**
-
-Composite score reflecting overall environment quality:
-
-| Dimension | Weight | Metrics |
-|-----------|--------|---------|
-| Navigability | 40% | Pathfinding Score, First Touch Rate, Revisit Waste Rate |
-| Cognitive Load | 35% | Focus Ratio, Warmup Cost, Token Efficiency Rate, Orientation Time Ratio, Warmup Precision |
-| Task Effectiveness | 25% | Task Success Rate, Tool Call Count, Speed Score |
+Compute mean ratios across tasks for the summary. See `references/metrics.md` §3.2 for edge cases.
 
 ### [10] Terminal Output
 
 Generate the report in terminal using the format defined in `references/report-format.md`.
 
 **Report sections:**
-- Header with repo name, timestamp, task count
-- Per-task results table (task, category, grade, Lostness, steps)
-- Aggregate metrics summary
-- Agent Readiness Score with grade
-- Recommendations for environment improvement
+- Header with repo name, commit hash, task count
+- Per-task results table (category, status, tokens, time, backtrack)
+- Summary (successful count, total tokens, total time, avg backtrack)
+- A/B comparison tables and summary ratios (comparison mode only)
 
 **Optional export** (only on user request):
 - **JSON**: Machine-readable full results
