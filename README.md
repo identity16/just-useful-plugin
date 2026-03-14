@@ -7,6 +7,7 @@ Practical skills for AI coding agents — document gardening, knowledge base mai
 | Skill | Description |
 |-------|-------------|
 | **garden-docs** | Document gardening — verify docs match code, maintain knowledge base structure, CLAUDE.md authoring |
+| **agent-benchmark** | Agent benchmark — measure agent task performance, evaluate environment setup quality, A/B comparison |
 
 ## Installation
 
