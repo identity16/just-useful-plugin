@@ -6,9 +6,7 @@ This document defines the output formats for agent benchmark reports: terminal d
 
 ## 1. Terminal Output Format (Default)
 
-The default report renders directly in the terminal using box-drawing characters and visual bar charts.
-
-### Template
+### Single Run Template
 
 ```
 ╔══════════════════════════════════════════════════╗
@@ -16,140 +14,107 @@ The default report renders directly in the terminal using box-drawing characters
 ║           {project_name} @ {commit_hash}         ║
 ╠══════════════════════════════════════════════════╣
 
-── Navigability (40%) ─────────────────────────────
-  Pathfinding Score     {value}  {bar}  {grade}
-  First Touch Rate      {value}  {bar}  {grade}
-  Revisit Waste Rate    {value}  {bar}  {grade}
-  ▸ Dimension Score     {dim_score}  {bar}
+── Task Results ───────────────────────────────────
+  #   Category        Status   Tokens    Time    Backtrack
+  1   Discovery       ✓        12,340    42.0s   0.08
+  2   Comprehension   ✓        28,100   107.3s   0.15
+  3   Diagnosis       ✓         8,200    26.1s   0.00
+  4   Modification    ✓         6,500    26.9s   0.03
 
-── Cognitive Load (35%) ───────────────────────────
-  Focus Ratio           {value}  {bar}  {grade}
-  Warmup Cost           {value}  {bar}  {grade}
-  Token Efficiency Rate {value}  {bar}  {grade}
-  Orientation Time Ratio {value} {bar}  {grade}
-  Warmup Precision      {value}  {bar}  {grade}
-  ▸ Dimension Score     {dim_score}  {bar}
-
-── Task Effectiveness (25%) ───────────────────────
-  Task Success Rate     {value}  {bar}  {grade}
-  Tool Call Count       {value}  {bar}  {grade}
-  Speed Score           {value}  {bar}  {grade}
-  ▸ Dimension Score     {dim_score}  {bar}
-
-── Overall ────────────────────────────────────────
-  Agent Readiness Score:  {score} / 100  {bar}
-
-── Task Breakdown ─────────────────────────────────
-  #1 [{category}]  PS={pathfinding}  {status}  {calls} calls
-  #2 [{category}]  PS={pathfinding}  {status}  {calls} calls
-  ...
+── Summary ────────────────────────────────────────
+  Successful: 4/4
+  Total Tokens: 55,140
+  Total Time: 202.3s
+  Avg Backtrack: 0.07
 
 ╚══════════════════════════════════════════════════╝
 ```
 
-### Bar Chart Rendering Rules
-
-Bar charts are 10 characters wide using filled (`█`) and empty (`░`) blocks.
-
-| Metric type | Conversion to fill ratio | Example |
-|---|---|---|
-| 0-1 scale (e.g., Pathfinding Score, Focus Ratio) | Use value directly as proportion | 0.7 → `███████░░░` |
-| Percentage metrics (e.g., Task Success Rate displayed as %) | Divide by 100 | 70% → `███████░░░` |
-| Count metrics (Warmup Cost, Tool Call Count) | Invert and normalize against grade thresholds | See below |
-
-**Count metric normalization:**
-
-For count-based metrics where lower is better (Warmup Cost, Tool Call Count), the bar fill is calculated by inverting relative to grade thresholds:
-
-```
-fill = 1 - (value - excellent_threshold) / (poor_threshold - excellent_threshold)
-fill = clamp(fill, 0, 1)
-```
-
-For example, if Warmup Cost has Excellent <= 3 and Poor > 10:
-- Value 3 → fill = 1.0 → `██████████`
-- Value 6 → fill ≈ 0.57 → `██████░░░░`
-- Value 11 → fill = 0.0 → `░░░░░░░░░░`
-
-**Rendering formula:**
-
-```
-filled_count = round(fill_ratio * 10)
-empty_count  = 10 - filled_count
-bar = '█' * filled_count + '░' * empty_count
-```
-
-### Dimension Score Rendering
-
-Each dimension section ends with a `▸ Dimension Score` line showing the normalized average (0–1) of that dimension's metrics. This is the value used in the weighted ARS calculation.
-
-```
-▸ Dimension Score     {dim_score}  {bar}
-```
-
-The bar uses the same 10-character rendering as other 0–1 scale metrics. The `dim_score` is displayed as a decimal (e.g., `0.75`).
-
 ### Status Indicators
 
-Each task in the breakdown section uses one of these status markers:
-
 | Symbol | Meaning |
-|---|---|
-| `✓ Complete` | Task finished successfully |
-| `✗ Failed` | Task did not complete |
-| `~ Partial` | Task partially completed |
+|--------|---------|
+| ✓ | Task completed successfully (included in metrics) |
+| ✗ | Task failed (excluded from summary metrics) |
+
+### Formatting Rules
+
+- **Tokens**: Displayed with comma separators (e.g., `12,340`)
+- **Time**: Displayed in seconds with 1 decimal (e.g., `42.0s`)
+- **Backtrack**: Displayed as decimal 0–1 with 2 decimals (e.g., `0.08`)
+- **Summary totals**: Sum of all tasks (successful + failed) for tokens/time; average of successful tasks only for backtrack
 
 ---
 
 ## 2. A/B Comparison Output Format
 
-When running in comparison mode (two conditions side by side), the report appends an A/B comparison section.
-
 ### Template
 
 ```
-── A/B Comparison ─────────────────────────────────
-                         Condition A     Condition B
-                         ({label_a})     ({label_b})
-  ── Navigability ───────────────────────────────────
-  Pathfinding Score      {val_a}         {val_b}  ({delta}%)
-  First Touch Rate       {val_a}         {val_b}  ({delta}%)
-  Revisit Waste Rate     {val_a}         {val_b}  ({delta}%)
-  ▸ Dimension Score      {dim_a}         {dim_b}  ({delta}%)
+╔══════════════════════════════════════════════════════════╗
+║           Agent Benchmark Report                         ║
+║           {project} @ {commit_a} vs {commit_b}           ║
+║           ({label_a}) vs ({label_b})                     ║
+╠══════════════════════════════════════════════════════════╣
 
-  ── Cognitive Load ─────────────────────────────────
-  Focus Ratio            {val_a}         {val_b}  ({delta}%)
-  Warmup Cost            {val_a}         {val_b}  ({delta}%)
-  Token Efficiency Rate  {val_a}         {val_b}  ({delta}%)
-  Orientation Time Ratio {val_a}         {val_b}  ({delta}%)
-  Warmup Precision       {val_a}         {val_b}  ({delta}%)
-  ▸ Dimension Score      {dim_a}         {dim_b}  ({delta}%)
+── Task Comparison (successful only) ──────────────────────
+  #   Category        A Tokens   B Tokens   Ratio
+  1   Discovery        12,340     10,200     1.21  ← B
+  2   Comprehension    28,100     32,500     0.86  ← A
+  3   Diagnosis         8,200     24,800     0.33  ← A
+  4   Modification      6,500      6,800     0.96  ← A
 
-  ── Task Effectiveness ─────────────────────────────
-  Task Success Rate      {val_a}         {val_b}  ({delta}%)
-  Tool Call Count        {val_a}         {val_b}  ({delta}%)
-  Speed Score            {val_a}         {val_b}  ({delta}%)
-  ▸ Dimension Score      {dim_a}         {dim_b}  ({delta}%)
+  #   Category        A Time     B Time     Ratio
+  1   Discovery        42.0s      43.1s     0.98  ← A
+  2   Comprehension   107.3s      96.6s     1.11  ← B
+  3   Diagnosis        26.1s      50.3s     0.52  ← A
+  4   Modification     26.9s      27.3s     0.99  ← A
 
-  ── Overall ────────────────────────────────────────
-  Agent Readiness        {score_a}       {score_b} ({delta}%)
+  #   Category        A BT       B BT       Ratio
+  1   Discovery        0.08       0.05      1.60  ← B
+  2   Comprehension    0.15       0.10      1.50  ← B
+  3   Diagnosis        0.00       0.12      0.00  ← A
+  4   Modification     0.03       0.04      0.75  ← A
+
+── Summary ──────────────────────────────────────────
+  Avg Token Ratio:     0.72  → A가 효율적
+  Avg Time Ratio:      0.88  → A가 효율적
+  Avg Backtrack Ratio: 1.22  → B가 효율적
+
+╚══════════════════════════════════════════════════════════╝
 ```
 
-### Delta Calculation
+### Ratio Calculation
 
 ```
-delta = ((val_b - val_a) / val_a) * 100
+ratio = val_A / val_B
 ```
 
-- Positive deltas are prefixed with `+` (e.g., `+15%`), indicating Condition B improved over A.
-- Negative deltas are prefixed with `-` (e.g., `-23%`), indicating Condition B regressed.
-- If `val_a` is zero, display `N/A` instead of a percentage.
+- ratio > 1: B is more efficient (display `← B`)
+- ratio < 1: A is more efficient (display `← A`)
+- ratio = 1: equal
+
+### Winner Indicator
+
+Each task row ends with `← A` or `← B` indicating which condition was more efficient for that task. The arrow points to the winner.
+
+### Summary Interpretation
+
+Each summary line shows direction:
+- `→ A가 효율적`: A consumed fewer resources on average
+- `→ B가 효율적`: B consumed fewer resources on average
+
+### Edge Cases
+
+- If a task succeeded in one condition but failed in the other, exclude it from comparison (note in report)
+- If both backtrack rates are 0, ratio = 1.0
+- If only one backtrack rate is 0, display `← A` or `← B` without numeric ratio
 
 ---
 
 ## 3. JSON Export Schema
 
-Triggered when the user requests `--json` or asks for JSON output. The full schema is defined below.
+Triggered when the user requests `--json` or asks for JSON output.
 
 ### Single-Run Schema
 
@@ -168,77 +133,29 @@ Triggered when the user requests `--json` or asks for JSON output. The full sche
       "category": "Discovery|Comprehension|Modification|Diagnosis",
       "prompt": "{task description}",
       "difficulty": "easy|medium|hard",
-      "expected": {
-        "files": ["{file_paths}"],
-        "r_value": 3
+      "status": "complete|failed",
+      "metrics": {
+        "total_tokens": 12340,
+        "elapsed_time": 42.0,
+        "backtrack_rate": 0.08
       },
-      "actual": {
-        "status": "complete|failed|partial",
+      "detail": {
         "files_accessed": ["{file_paths}"],
         "unique_files": 5,
-        "total_accesses": 8,
-        "tool_calls": [
-          {"tool": "Read", "params": {}, "timestamp": "{ISO-8601}"}
-        ]
+        "total_accesses": 8
       }
     }
   ],
-  "metrics": {
-    "navigability": {
-      "pathfinding_score": {"value": 0.77, "grade": "Good"},
-      "first_touch_rate": {"value": 0.67, "grade": "Excellent"},
-      "revisit_waste_rate": {"value": 0.12, "grade": "Good"}
-    },
-    "cognitive_load": {
-      "focus_ratio": {"value": 0.48, "grade": "Good"},
-      "warmup_cost": {"value": 6, "grade": "Good"},
-      "token_efficiency_rate": {"value": 0.66, "grade": "Excellent"},
-      "orientation_time_ratio": {"value": 0.52, "grade": "Good"},
-      "warmup_precision": {"value": 0.83, "grade": "Excellent"}
-    },
-    "task_effectiveness": {
-      "task_success_rate": {"value": 1.0, "grade": "Excellent"},
-      "tool_call_count": {"value": 24, "grade": "Fair"},
-      "speed_score": {"value": 0.82, "grade": "Excellent"}
-    }
-  },
-  "dimension_scores": {
-    "navigability": {"score": 0.77, "weighted": 0.31},
-    "cognitive_load": {"score": 0.68, "weighted": 0.24},
-    "task_effectiveness": {"score": 0.74, "weighted": 0.19}
-  },
-  "score": {
-    "agent_readiness": 73,
-    "grade": "Good"
+  "summary": {
+    "successful": 4,
+    "total": 4,
+    "total_tokens": 55140,
+    "total_time": 202.3,
+    "avg_backtrack": 0.07
   },
   "comparison": null
 }
 ```
-
-### Field Descriptions
-
-| Field | Type | Description |
-|---|---|---|
-| `meta.project` | string | Name of the benchmarked project |
-| `meta.commit` | string | Git commit hash at time of benchmark |
-| `meta.timestamp` | string | ISO-8601 timestamp of the run |
-| `meta.mode` | string | `"single"` for standard runs, `"comparison"` for A/B |
-| `meta.task_count` | integer | Number of tasks executed |
-| `tasks[].id` | string | Unique task identifier (e.g., `"task-001"`) |
-| `tasks[].category` | string | One of: `Discovery`, `Comprehension`, `Modification`, `Diagnosis` |
-| `tasks[].difficulty` | string | One of: `easy`, `medium`, `hard` |
-| `tasks[].expected.files` | string[] | Files the agent should access to solve the task |
-| `tasks[].expected.r_value` | integer | Minimum relevant files needed (R value) |
-| `tasks[].actual.status` | string | One of: `complete`, `failed`, `partial` |
-| `tasks[].actual.files_accessed` | string[] | All file paths the agent accessed |
-| `tasks[].actual.unique_files` | integer | Count of distinct files accessed |
-| `tasks[].actual.total_accesses` | integer | Total file access operations (including revisits) |
-| `tasks[].actual.tool_calls` | object[] | Ordered list of tool invocations with timestamps |
-| `metrics.*` | object | Each metric contains `value` (number) and `grade` (string) |
-| `dimension_scores.*` | object | Each dimension contains `score` (0–1 average) and `weighted` (score × weight) |
-| `score.agent_readiness` | integer | Composite score from 0-100 |
-| `score.grade` | string | One of: `Excellent`, `Good`, `Fair`, `Poor` |
-| `comparison` | object\|null | Null for single runs; populated for A/B comparisons |
 
 ### A/B Comparison Schema
 
@@ -248,70 +165,74 @@ When `meta.mode` is `"comparison"`, the `comparison` field is populated:
 {
   "condition_a": {
     "label": "...",
-    "score": 72,
-    "dimension_scores": {
-      "navigability": 0.75,
-      "cognitive_load": 0.68,
-      "task_effectiveness": 0.78
-    },
-    "metrics": {
-      "pathfinding_score": 0.77,
-      "first_touch_rate": 0.67,
-      "revisit_waste_rate": 0.12,
-      "focus_ratio": 0.48,
-      "warmup_cost": 6,
-      "token_efficiency_rate": 0.66,
-      "orientation_time_ratio": 0.52,
-      "warmup_precision": 0.83,
-      "task_success_rate": 1.0,
-      "tool_call_count": 24,
-      "speed_score": 0.82
+    "commit": "{commit_hash}",
+    "tasks": [
+      {
+        "id": "task-001",
+        "category": "Discovery",
+        "status": "complete",
+        "metrics": {
+          "total_tokens": 12340,
+          "elapsed_time": 42.0,
+          "backtrack_rate": 0.08
+        }
+      }
+    ],
+    "summary": {
+      "successful": 4,
+      "total": 4,
+      "total_tokens": 55140,
+      "total_time": 202.3,
+      "avg_backtrack": 0.07
     }
   },
   "condition_b": {
     "label": "...",
-    "score": 38,
-    "dimension_scores": {
-      "navigability": 0.42,
-      "cognitive_load": 0.31,
-      "task_effectiveness": 0.52
-    },
-    "metrics": {
-      "pathfinding_score": 0.39,
-      "first_touch_rate": 0.33,
-      "revisit_waste_rate": 0.35,
-      "focus_ratio": 0.21,
-      "warmup_cost": 14,
-      "token_efficiency_rate": 0.31,
-      "orientation_time_ratio": 0.71,
-      "warmup_precision": 0.29,
-      "task_success_rate": 0.75,
-      "tool_call_count": 52,
-      "speed_score": 0.41
-    }
+    "commit": "{commit_hash}",
+    "tasks": [ "..." ],
+    "summary": { "..." }
   },
-  "deltas": {
-    "dimension_scores": {
-      "navigability": -44,
-      "cognitive_load": -54,
-      "task_effectiveness": -33
-    },
-    "pathfinding_score": -49,
-    "first_touch_rate": -51,
-    "revisit_waste_rate": 192,
-    "focus_ratio": -56,
-    "warmup_cost": 133,
-    "token_efficiency_rate": -53,
-    "orientation_time_ratio": 37,
-    "warmup_precision": -65,
-    "task_success_rate": -25,
-    "tool_call_count": 117,
-    "speed_score": -50
+  "ratios": {
+    "per_task": [
+      {
+        "id": "task-001",
+        "category": "Discovery",
+        "token_ratio": 1.21,
+        "time_ratio": 0.98,
+        "backtrack_ratio": 1.60,
+        "winner": {
+          "tokens": "B",
+          "time": "A",
+          "backtrack": "B"
+        }
+      }
+    ],
+    "averages": {
+      "token_ratio": 0.72,
+      "time_ratio": 0.88,
+      "backtrack_ratio": 1.22
+    }
   }
 }
 ```
 
-The `deltas` object contains the percentage change from Condition A to Condition B for each metric, calculated as `((val_b - val_a) / val_a) * 100` and rounded to the nearest integer.
+### Field Descriptions
+
+| Field | Type | Description |
+|---|---|---|
+| `meta.project` | string | Name of the benchmarked project |
+| `meta.commit` | string | Git commit hash (single run) or omitted (comparison) |
+| `meta.timestamp` | string | ISO-8601 timestamp of the run |
+| `meta.mode` | string | `"single"` for standard runs, `"comparison"` for A/B |
+| `meta.task_count` | integer | Number of tasks executed |
+| `tasks[].status` | string | `"complete"` or `"failed"` |
+| `tasks[].metrics.total_tokens` | integer | Total tokens consumed |
+| `tasks[].metrics.elapsed_time` | number | Seconds from first to last tool call |
+| `tasks[].metrics.backtrack_rate` | number | 0–1 revisit proportion |
+| `summary.successful` | integer | Number of successful tasks |
+| `summary.avg_backtrack` | number | Mean backtrack rate of successful tasks |
+| `ratios.per_task[].winner` | object | Per-metric winner (`"A"` or `"B"`) |
+| `ratios.averages` | object | Mean ratios across successful tasks |
 
 ---
 
@@ -325,13 +246,7 @@ Triggered when the user requests `--report` or asks for a Markdown report.
 docs/benchmarks/YYYY-MM-DD-report.md
 ```
 
-The date is the date of the benchmark run.
-
-### Structure
-
-The Markdown report mirrors the terminal output but uses Markdown tables for structured data.
-
-#### Example
+### Single Run Example
 
 ```markdown
 # Agent Benchmark Report
@@ -340,62 +255,31 @@ The Markdown report mirrors the terminal output but uses Markdown tables for str
 **Commit:** {commit_hash}
 **Date:** {YYYY-MM-DD}
 
-## Navigability (40%)
+## Task Results
 
-| Metric | Value | Grade |
-|---|---|---|
-| Pathfinding Score | 0.77 | Good |
-| First Touch Rate | 0.67 | Excellent |
-| Revisit Waste Rate | 0.12 | Good |
+| # | Category | Status | Tokens | Time | Backtrack |
+|---|----------|--------|--------|------|-----------|
+| 1 | Discovery | ✓ | 12,340 | 42.0s | 0.08 |
+| 2 | Comprehension | ✓ | 28,100 | 107.3s | 0.15 |
+| 3 | Diagnosis | ✓ | 8,200 | 26.1s | 0.00 |
+| 4 | Modification | ✓ | 6,500 | 26.9s | 0.03 |
 
-**Dimension Score:** 0.77
+## Summary
 
-## Cognitive Load (35%)
-
-| Metric | Value | Grade |
-|---|---|---|
-| Focus Ratio | 0.48 | Good |
-| Warmup Cost | 6 | Good |
-| Token Efficiency Rate | 0.66 | Excellent |
-| Orientation Time Ratio | 0.52 | Good |
-| Warmup Precision | 0.83 | Excellent |
-
-**Dimension Score:** 0.68
-
-## Task Effectiveness (25%)
-
-| Metric | Value | Grade |
-|---|---|---|
-| Task Success Rate | 1.00 | Excellent |
-| Tool Call Count | 24 | Fair |
-| Speed Score | 0.82 | Excellent |
-
-**Dimension Score:** 0.74
-
-## Overall
-
-**Agent Readiness Score:** 73 / 100 (Good)
-
-## Task Breakdown
-
-| # | Category | Pathfinding | Status | Tool Calls |
-|---|---|---|---|---|
-| 1 | Discovery | 0.85 | Complete | 6 |
-| 2 | Comprehension | 0.72 | Complete | 8 |
-| 3 | Modification | 0.65 | Complete | 12 |
-| 4 | Diagnosis | 0.90 | Failed | 15 |
+- **Successful:** 4/4
+- **Total Tokens:** 55,140
+- **Total Time:** 202.3s
+- **Avg Backtrack:** 0.07
 
 <details>
 <summary>Raw JSON Data</summary>
 
-\```json
+json
 { ... full JSON export ... }
-\```
 
 </details>
 ```
 
-### Notes
+### A/B Comparison Example
 
-- The JSON block inside `<details>` contains the complete JSON export as defined in Section 3.
-- If the run was an A/B comparison, the Markdown report includes a comparison table between the two sections and the Overall score, following the same layout as the terminal A/B comparison format.
+The Markdown report includes per-metric comparison tables and summary ratios, following the same layout as the terminal A/B comparison format.
