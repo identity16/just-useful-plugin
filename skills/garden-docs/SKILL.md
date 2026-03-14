@@ -15,6 +15,8 @@ Process for keeping docs in sync with code and maintaining the knowledge base as
 - Never rationalize "unnecessary at this scale" — entropy accumulates regardless of scale
 - Never speculatively add rules to knowledge base docs — add only when an agent makes a mistake
 - Never put context directly in CLAUDE.md. No exceptions. "It's short", "it's a behavior rule", "this repo is special" are all rationalizations.
+- Never add LLM-generated architecture overviews or project descriptions to docs/ — they degrade agent performance (ETH Zurich finding: -3% success rate). Add docs only when an agent makes a mistake or a human writes the content.
+- Treat every token in CLAUDE.md as currency — each token competes for attention in the model's context window. Irrelevant tokens actively introduce noise into reasoning.
 
 </HARD-GATE>
 
@@ -28,10 +30,22 @@ CLAUDE.md (or AGENTS.md) should contain **only a table of contents**. All contex
 
 | Location | Role |
 |----------|------|
-| **CLAUDE.md** | ~100-line table of contents. Contains only **conditional triggers** pointing to docs/ files |
+| **CLAUDE.md** | ~100-line table of contents. Contains only **conditional triggers** pointing to docs/ files. Target ≤ 500 tokens (`wc -w` ≤ ~375 words) |
 | **docs/** | All context. Architecture, conventions, design docs, execution plans, etc. |
 
 **"It's short enough to keep in CLAUDE.md" is a rationalization.** Whether it's a 1-line project overview, 5-line convention, or behavior rule — all context belongs in docs/. CLAUDE.md should only contain triggers pointing to the relevant docs/ file.
+
+### Token Budget
+
+Every token loaded into context competes for the model's attention. Bloated context makes agents **dumber**, not smarter.
+
+| Target | Budget |
+|--------|--------|
+| **CLAUDE.md** | ≤ 500 tokens (~375 words). Measure with `wc -w` |
+| **docs/ file** | ≤ 200 lines each. Split if larger |
+| **Enforceable rules** | Do NOT document in CLAUDE.md or docs/. Delegate to linter/formatter. One trigger suffices: `Run \`lint:fix\` after changes` |
+
+Rules that linters, formatters, or type checkers can enforce (indentation, quotes, line length, import ordering) waste tokens when written in docs. The tool config **is** the documentation.
 
 ### Use Conditional Triggers
 
@@ -53,32 +67,64 @@ Each CLAUDE.md entry must specify **when to read it**. Simple pointers (path + d
 
 **The difference**: Simple pointers say "this exists." Conditional triggers say "read this when." Agents act on instructions, not awareness.
 
-### Add Section Hints for Faster Navigation
+### Progressive Disclosure: Index → Details → Deep Dive
 
-When docs/ files are large (100+ lines), add **section hints** to conditional triggers so agents can target the relevant part without reading the whole file.
+Context should flow through layers, not be dumped all at once. Apply a **3-layer architecture** to both triggers and docs/ structure:
+
+| Layer | What | Token Cost | When Loaded |
+|-------|------|------------|-------------|
+| **Index** | CLAUDE.md triggers, `docs/index.md` routing map | ~500 tokens | Always |
+| **Details** | `docs/*.md` (architecture, conventions) | ~200 lines each | On trigger match |
+| **Deep Dive** | `docs/deep-dive/*.md`, `docs/design-docs/*.md` | Unlimited | On explicit need from Details |
+
+**Trigger format with layers:**
 
 ```markdown
-# ❌ No section hint — agent reads entire file to find relevant section
+# ❌ Flat — agent reads entire file, no path to deeper context
 - When understanding layer boundaries → read `docs/architecture.md`
 
-# ✅ Section hint — agent can jump to the relevant section
+# ✅ Layered — agent targets section, can go deeper if needed
 - When understanding layer boundaries → read `docs/architecture.md` §Layer Dependencies
-- When checking directory layout → read `docs/architecture.md` §Directory Structure
+  # Deep dive available: `docs/deep-dive/layer-dependency-rationale.md`
 ```
 
-**Rules for section hints:**
+**Rules for section hints (§):**
 - Use `§` followed by the section heading name (matching the `##` or `###` heading in the doc)
-- Only add hints when the target file has 3+ distinct sections that serve different purposes
+- Add hints by default for any docs/ file with 2+ distinct sections
 - One trigger per section — don't combine multiple sections into one trigger
 - Keep section names short (2-3 words) — they are navigation aids, not descriptions
 
+### Trigger Specificity
+
+Vague triggers fire too broadly or not at all. Each trigger condition must match an **observable agent action**, not an abstract intent.
+
+```markdown
+# ❌ Vague — "understanding" is not an observable action
+- When understanding the project → read `docs/architecture.md`
+
+# ❌ Too broad — fires on every file touch
+- When working on the project → read `docs/conventions.md`
+
+# ✅ Specific — matches observable file access patterns
+- When modifying src/middleware/ or adding new API routes → read `docs/architecture.md` §Middleware Layer
+- When adding/modifying skills or updating plugin metadata → read `docs/conventions.md`
+```
+
+**Self-test**: for each trigger, ask "can I name a specific file or command that would cause this to fire?" If not, the trigger is too vague.
+
 ### docs/ = System of Record
 
-All context that agents need to read lives here.
+All context that agents need to read lives here. Structure docs/ for **progressive disclosure** — agents should read a routing map first, then dive into specific files.
 
 ```
 docs/
+├── index.md               # Routing map — what's in each file, when to read it
+├── architecture.md        # ≤ 200 lines. Project structure, layer boundaries
+├── conventions.md         # ≤ 200 lines. Coding rules, workflows
 ├── design-docs/           # Design documents (navigated via index.md)
+├── deep-dive/             # Detailed context, accessed only from Details-layer docs
+│   ├── auth-flow.md
+│   └── data-model.md
 ├── exec-plans/            # Execution plans
 │   ├── active/            #   In progress
 │   ├── completed/         #   Done
@@ -87,6 +133,10 @@ docs/
 ├── product-specs/         # Product specs
 └── references/            # External references (LLM-friendly docs, etc.)
 ```
+
+**`docs/index.md`** is optional but recommended for repos with 5+ docs/ files. It serves as a routing map that agents consult before reading individual docs. CLAUDE.md triggers should point to specific docs/ files, not to index.md.
+
+**`docs/deep-dive/`** files should NOT appear in CLAUDE.md triggers. They are referenced from within Details-layer docs (architecture.md, conventions.md, etc.) when an agent needs to go deeper.
 
 ### Monorepo Progressive Disclosure
 
@@ -145,9 +195,14 @@ monorepo/
 |---------|---------|-----|
 | **Inline context in CLAUDE.md** | Loses table-of-contents role | Move all context to docs/ |
 | **Simple pointers** `[Title](path): description` | Agents won't read them | Use conditional triggers `when ~ → path` |
-| **200+ line CLAUDE.md** | Context overload | Compress to ~100-line TOC |
+| **200+ line CLAUDE.md** | Context overload | Compress to ~100-line TOC (≤ 500 tokens) |
 | **"Short enough to inline"** | Exceptions pile up into bloat | No exceptions. Everything in docs/ |
 | **Speculative rules** | Noise | Add only on agent mistakes. Review for deletion if unviolated for 3 months |
+| **LLM-generated docs** | -3% success rate, +20% cost | Human-written only. Add on actual agent mistakes |
+| **Linter rules in docs** | Wasted tokens | Delegate to tooling. One trigger: `Run lint:fix` |
+| **Vague trigger conditions** | Won't fire or fires too broadly | Reference observable actions: file paths, commands |
+| **Flat docs/ without layers** | Agent reads everything | Use Index → Details → Deep Dive layers |
+| **Stale docs trusted silently** | Silent agent failures | Context rot detection in [0] |
 | **Knowledge only in external systems** | Agents can't access it | Encode in repo |
 | **Root-workspace trigger duplication** | Fix one, the other drifts | Once in root only. Workspaces inherit |
 | **Copying shared rules to workspaces** | Can't stay in sync | Manage in root docs/ |
@@ -195,7 +250,7 @@ Main Agent                         Subagents
 - **SubB (L2)**: CLAUDE.md verification requires judging TOC structure, consistency, and health — needs a focused agent
 - **SubC (L1+cross-refs)**: README and cross-references can be verified by path existence alone, without results from other layers
 
-### [0] Check Change History — Main Agent Executes Directly
+### [0] Check Change History & Context Rot — Main Agent Executes Directly
 
 Run git log before reviewing. **Do not rely on memory. Always run the commands.**
 
@@ -208,7 +263,19 @@ git log --format='%ar %s' -1 -- CLAUDE.md
 git log --format='%ar %s' -1 -- README.md
 ```
 
-Include these results in subagent prompts. Subagents cross-check whether each change is reflected in docs.
+**Context Rot Detection**: Stale docs cause silent failures when agents trust outdated information. Check for docs that haven't been updated while their referenced source code has changed.
+
+```bash
+# Find docs/ files not modified in 3+ months
+find docs/ -name "*.md" -exec sh -c 'echo "$(git log --format=%ar -1 -- "$1") $1"' _ {} \;
+
+# Find source files modified in the last 3 months (compare against stale docs)
+git log --since="3 months ago" --name-only --pretty=format: -- src/ | sort -u | head -20
+```
+
+If a docs/ file hasn't been modified in 3+ months but the source code it references has changed, flag it as **stale** in the subagent prompt. SubB must verify whether the content is still accurate.
+
+Include change history and staleness flags in subagent prompts. Subagents cross-check whether each change is reflected in docs.
 
 ### SubA Checklist: L4 Meta + L3 Skills
 
@@ -231,16 +298,31 @@ Include these results in subagent prompts. Subagents cross-check whether each ch
 
 ### SubB Checklist: L2 AI Context
 
-**TOC Structure:**
+**TOC Structure & Token Budget:**
 - [ ] Is CLAUDE.md ~100 lines or fewer?
+- [ ] Is CLAUDE.md ≤ 500 tokens? (`wc -w` ≤ ~375 words)
 - [ ] No inline context in CLAUDE.md? (Violation if project overview, architecture, conventions, commands, etc. are written directly)
+- [ ] No linter/formatter-enforceable rules in CLAUDE.md or docs/? (indentation, quotes, line length → delegate to tooling)
 - [ ] All context lives in docs/ knowledge base?
 - [ ] Are docs/ references in conditional trigger format? (`when ~ → path`) — not simple pointers (`[Title](path): description`)?
+- [ ] Each docs/ file ≤ 200 lines? (Split if larger, add § hints to triggers)
+
+**Trigger Quality:**
+- [ ] Each trigger condition references an **observable agent action** (file access, command execution), not abstract intent ("understanding", "working on")?
+- [ ] Self-test: can you name a specific file or command that would cause each trigger to fire?
+- [ ] Triggers include § section hints for docs/ files with 2+ sections?
+- [ ] `docs/deep-dive/` files are NOT directly referenced from CLAUDE.md triggers?
 
 **Consistency:**
 - [ ] Do conditional triggers point to docs/ files that actually exist?
 - [ ] Does docs/ content match current codebase structure?
 - [ ] Does MCP server list match actual `.mcp.json`?
+- [ ] No orphan docs/ files (files not referenced by any trigger or other doc)?
+
+**Freshness (Context Rot):**
+- [ ] Docs/ files flagged as stale in [0] — do they still match current source code?
+- [ ] If source code referenced by a doc has changed since last doc update, content is still accurate?
+- [ ] No LLM-generated architecture overviews or project descriptions in docs/?
 
 **Health:**
 - [ ] No duplicate triggers between root and workspace CLAUDE.md
@@ -278,15 +360,19 @@ Synthesize subagent results into a single report.
 
 ### Issues Found
 
-| # | Layer | File | Issue | Severity |
-|---|-------|------|-------|----------|
-| 1 | L2   | CLAUDE.md | Conventions written inline | High |
-| 2 | L2   | CLAUDE.md | docs/ references are simple pointers | High |
+| # | Layer | File | Issue | Severity | Token Impact |
+|---|-------|------|-------|----------|-------------|
+| 1 | L2   | CLAUDE.md | Conventions written inline | High | +2,400 tokens/session |
+| 2 | L2   | CLAUDE.md | docs/ references are simple pointers | High | — (behavioral) |
+| 3 | L2   | docs/arch.md | 350 lines, no § hints in triggers | Med | +800 tokens (full file read) |
+| 4 | L2   | docs/style.md | Linter-enforceable rules documented | Med | +600 tokens (wasted) |
 ```
 
+**Token Impact** estimates the per-session cost of the issue. Use `wc -w` on the affected content to estimate. Issues that waste tokens get priority over purely behavioral issues.
+
 **Severity criteria:**
-- **High**: Inline context in CLAUDE.md, conditional triggers not used, agent working with wrong context
-- **Medium**: Wrong information for users, affects skill behavior
+- **High**: Inline context in CLAUDE.md, conditional triggers not used, agent working with wrong context, token budget exceeded
+- **Medium**: Wrong information for users, affects skill behavior, docs/ file over 200 lines without § hints
 - **Low**: Formatting inconsistency
 
 **The urge to downgrade severity is itself a Red Flag.** "This repo is special", "this level is fine" are rationalizations. Judge by the criteria.
@@ -313,12 +399,18 @@ Synthesize subagent results into a single report.
 | "Just listing the docs/ path is enough" | Without conditional triggers, agents won't read it |
 | "Better add a rule just in case" | Speculative rules are noise. Add only on mistakes |
 | "Copy to all workspaces" | Duplication always drifts |
+| "The docs haven't changed, so they're fine" | Source code may have changed. Run context rot detection |
+| "Let Claude generate the architecture doc" | LLM-generated docs degrade performance. Human-written only |
+| "More context = more helpful" | More context = more noise. Every token competes for attention |
+| "This trigger is clear enough" | If you can't name a file that fires it, it's too vague |
 
 ## Tools
 
 - `Glob`: Check file existence
-- `Grep`: Search references in docs, detect duplicate content
+- `Grep`: Search references in docs, detect duplicate content, find orphan docs/ files
 - `Read`: Verify doc contents
 - `Edit`: Modify docs
-- `Bash (git log)`: Last modified dates, structural change history
+- `Bash (git log)`: Last modified dates, structural change history, context rot detection
 - `Bash (wc -l)`: Measure CLAUDE.md line count
+- `Bash (wc -w)`: Measure CLAUDE.md token budget (~words ≈ tokens)
+- `Bash (find + git log)`: Context rot detection — compare doc freshness vs source changes

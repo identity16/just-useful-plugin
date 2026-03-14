@@ -8,7 +8,7 @@
     {
       "name": "just-useful-plugin",
       "description": "Practical skills for Claude Code: document gardening, knowledge base maintenance, doc-code sync workflows, and agent benchmarking",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "source": "./"
     }
   ]
