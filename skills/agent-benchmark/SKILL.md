@@ -100,21 +100,62 @@ Create a temporary JSONL log file for capturing all tool calls:
 /tmp/agent-benchmark-{TIMESTAMP}.jsonl
 ```
 
-**Hook installation:**
-- **PreToolUse hook**: Captures tool name, parameters, timestamp before execution
-- **PostToolUse hook**: Captures result metadata, file paths accessed, timestamp after execution
+**Hook installation via `settings.local.json`:**
+
+Claude Code hooks receive JSON on **stdin** containing tool information. The `tool_name` field identifies which tool was called. **Merge** the hooks config into the project's existing `.claude/settings.local.json` (read the file first, add the `hooks` key, write back — do not overwrite other keys like `permissions` or `enabledPlugins`):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{phase: \"pre\", tool: .tool_name, file_path: (.tool_input.file_path // .tool_input.path // \"\"), timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{phase: \"post\", tool: .tool_name, timestamp: (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))}' >> /tmp/agent-benchmark-TIMESTAMP.jsonl"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Important:**
+- Replace `TIMESTAMP` in the file path with the actual benchmark run timestamp before writing the settings file.
+- After the benchmark completes, **remove only the `hooks` key** from `settings.local.json` to restore normal operation (preserve other keys).
+- Hooks apply project-wide, so the main benchmark runner's own tool calls are also captured. Use **timestamp gaps** between tasks to segment the log: record task start/end timestamps and filter log entries by time range during Phase 3 log parsing.
+
+**Stdin JSON structure (provided by Claude Code):**
+- `session_id`: Session identifier
+- `tool_name`: Tool identifier (e.g., `"Read"`, `"Grep"`, `"Bash"`, `"Glob"`, `"Edit"`, `"Write"`, `"Agent"`)
+- `tool_input`: Tool parameters object (contains `file_path`, `pattern`, `command`, etc. depending on tool)
+- `tool_use_id`: Unique tool call identifier
+- `tool_response`: (PostToolUse only) Result returned by the tool
 
 Each log entry records:
 ```json
 {
   "phase": "pre|post",
   "tool": "Grep|Read|Bash|...",
-  "params": {},
-  "timestamp": "ISO-8601",
-  "file_paths": [],
-  "task_id": "task-001"
+  "file_path": "/path/to/file",
+  "timestamp": "ISO-8601"
 }
 ```
+
+> **Note:** `task_id` is not available in hook stdin. The benchmark runner must track task boundaries by recording timestamps before/after each subagent dispatch, then correlate log entries by time range during log parsing (Phase 3, step [7]).
 
 ### [5] Agent Execution — Basic Mode
 
