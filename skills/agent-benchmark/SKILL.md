@@ -75,9 +75,9 @@ Generate 4–8 tasks per repo using extracted code elements. Reference `referenc
 
 | Category | Example | Measures |
 |----------|---------|----------|
-| **Navigation** | "Find the entry point for the API server" | Lostness (optimal vs actual path) |
-| **Architecture** | "List all modules that depend on the auth package" | Comprehension depth |
-| **Debugging** | "Find where ValidationError is thrown and trace its handler" | Search efficiency |
+| **Discovery** | "Find the entry point for the API server" | Lostness (optimal vs actual path) |
+| **Comprehension** | "List all modules that depend on the auth package" | Comprehension depth |
+| **Diagnosis** | "Find where ValidationError is thrown and trace its handler" | Search efficiency |
 | **Modification** | "Add a new field to the User model" (in worktree) | End-to-end task completion |
 
 **Each generated task must include:**
@@ -180,10 +180,12 @@ Read the JSONL log file(s) and extract per-task metrics:
 
 Calculate metrics as defined in `references/metrics.md`:
 
-- **Lostness score** per task: `L = sqrt((N/S - 1)² + (R/S - 1)²)`
-- **Task success rate**: correct answers / total tasks
-- **Navigation efficiency**: R/S ratio averaged across tasks
-- **Cognitive load proxy**: unique files read / total file reads
+- **Lostness score** per task: `L = sqrt((N/S - 1)² + (R/N - 1)²)`
+
+Refer to `references/metrics.md` for all 9 metrics across 3 dimensions:
+- **Navigability** (40%): Pathfinding Score, First Touch Rate, Revisit Waste Rate
+- **Cognitive Load** (35%): Focus Ratio, Warmup Cost, Token Efficiency Rate
+- **Task Effectiveness** (25%): Task Success Rate, Tool Call Count, Speed Score
 
 ### [9] Grading & Agent Readiness Score
 
@@ -200,12 +202,11 @@ Calculate metrics as defined in `references/metrics.md`:
 
 Composite score reflecting overall environment quality:
 
-| Component | Weight | Source |
-|-----------|--------|--------|
-| Navigation efficiency | 30% | Avg Lostness (inverted) |
-| Task success rate | 30% | Correct / Total |
-| Cognitive load | 20% | File revisit ratio |
-| Coverage | 20% | Categories with Good+ grade |
+| Dimension | Weight | Metrics |
+|-----------|--------|---------|
+| Navigability | 40% | Pathfinding Score, First Touch Rate, Revisit Waste Rate |
+| Cognitive Load | 35% | Focus Ratio, Warmup Cost, Token Efficiency Rate |
+| Task Effectiveness | 25% | Task Success Rate, Tool Call Count, Speed Score |
 
 ### [10] Terminal Output
 
