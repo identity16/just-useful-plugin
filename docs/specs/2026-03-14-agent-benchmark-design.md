@@ -46,6 +46,8 @@ L = sqrt((N/S - 1)² + (R/N - 1)²)
 
 ## 측정 프레임워크
 
+> **Note:** The measurement framework below has been superseded by `docs/specs/2026-03-14-benchmark-metrics-redesign.md`. The new framework uses 3 flat metrics (Total Tokens, Elapsed Time, Backtrack Rate) instead of the 3-dimension 11-metric structure described here.
+
 ### 3차원 9개 지표
 
 #### Dimension 1: Navigability (40%)
