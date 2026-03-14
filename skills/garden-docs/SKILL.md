@@ -17,6 +17,12 @@ Process for keeping docs in sync with code and maintaining the knowledge base as
 - Never put context directly in CLAUDE.md. No exceptions. "It's short", "it's a behavior rule", "this repo is special" are all rationalizations.
 - Never add LLM-generated architecture overviews or project descriptions to docs/ — they degrade agent performance (ETH Zurich finding: -3% success rate). Add docs only when an agent makes a mistake or a human writes the content.
 - Treat every token in CLAUDE.md as currency — each token competes for attention in the model's context window. Irrelevant tokens actively introduce noise into reasoning.
+- **Never complete a review without verifying ALL 4 layers (L4→L3→L2→L1).** Fixing a few docs/ files and stopping is a violation. Creating 1-2 docs/ files is NOT "gardening complete."
+- **Always dispatch all 3 subagents (SubA, SubB, SubC).** Running checklists inline instead of dispatching subagents is a violation. "This repo is small enough to check inline" is a rationalization.
+- **Always re-verify after fixes by re-dispatching the relevant subagent.** "I can see the fix is correct" is a rationalization — re-dispatch confirms no new inconsistencies.
+- **Never skip coverage analysis.** Always build a Coverage Map in [0] and include it in SubB's prompt. "Existing docs are fine" without a coverage inventory is a rationalization.
+- **Never write superficial docs.** A docs/ file that only lists directory structure or file names without explaining WHY/HOW is not documentation — it's noise. Every docs/ file must give agents enough context to work correctly without guessing.
+- **Never accept docs based on existence alone.** "The file exists and has content" is not verification. Apply the self-test: "would this doc prevent an agent from making a wrong assumption?" If no → the doc needs improvement.
 
 </HARD-GATE>
 
@@ -230,20 +236,27 @@ Main Agent                         Subagents
 ───────────                        ──────────
 [0] Check change history via git log
          │
+[1] Dispatch ALL 3 subagents (mandatory)
          ├──dispatch──→  SubA: L4 Meta + L3 Skills
          ├──dispatch──→  SubB: L2 AI Context
          └──dispatch──→  SubC: L1 Entry Point + Cross-references
          │
-    Collect results (structured report)
+[2] GATE: Confirm all 3 subagents returned results
          │
-[6] Synthesize report & apply fixes
+[3] Synthesize report & apply fixes
+         │
+[4] Re-dispatch subagents for changed layers
+         │
+[5] GATE: Final all-layer status confirmed
 ```
 
-**Subagent dispatch rules:**
+**Subagent dispatch rules (MANDATORY — not advisory):**
+- You MUST dispatch all 3 subagents. Skipping any subagent is a HARD-GATE violation
 - Include **repo root path** and **change list from [0]** in each subagent's prompt
 - Include the **full checklist** for that layer in each subagent's prompt
 - Subagents **read and verify only**. They do not modify files
 - Return format: use the `Issues Found` table format from the report template below
+- Do NOT proceed to [3] until ALL 3 subagents have returned results
 
 **Grouping rationale:**
 - **SubA (L4+L3)**: Plugin meta and skill docs share the same directory structure
@@ -277,16 +290,53 @@ If a docs/ file hasn't been modified in 3+ months but the source code it referen
 
 Include change history and staleness flags in subagent prompts. Subagents cross-check whether each change is reflected in docs.
 
+**Coverage Inventory**: After change history, inventory the repo to understand what exists vs what docs/ covers. This is the foundation for coverage gap detection.
+
+```bash
+# Inventory: top-level directories and key files
+ls -1
+
+# Inventory: significant subdirectories (skills, plugins, src, etc.)
+find . -maxdepth 2 -type d -not -path './.git/*' -not -path './node_modules/*'
+
+# Inventory: what docs/ currently covers
+ls -1 docs/ 2>/dev/null
+
+# Inventory: key config/entry files
+ls -1 *.json *.md *.yml *.yaml 2>/dev/null
+```
+
+Build a **Coverage Map** — a table of "repo areas" vs "docs/ coverage":
+
+```
+Coverage Map:
+| Repo Area              | Covered By           | Status     |
+|------------------------|----------------------|------------|
+| skills/garden-docs/    | docs/conventions.md  | ✅ covered |
+| skills/agent-benchmark/| (none)               | ❌ gap     |
+| Plugin structure       | docs/architecture.md | ✅ covered |
+| Build/CI pipeline      | (none)               | ❌ gap     |
+```
+
+**What counts as a "repo area"**: any directory, module, or significant subsystem that an agent might need context about when working in this repo. Use judgment — a utility file doesn't need its own doc, but a major feature directory does.
+
+Include the Coverage Map in SubB's prompt. Gaps flagged here become coverage issues in SubB's report.
+
 **Progress updates** (adapt to user's language):
 
-Before dispatching subagents:
+After [0]:
 ```
-[Step 0 complete] Change history analysis done. Dispatching 3 subagents for L4–L1 layer verification.
+[Step 0 complete] Change history + coverage inventory done. Dispatching 3 subagents for L4–L1 layer verification.
 ```
 
-After subagents complete:
+After [2] gate passes:
 ```
-[Verification complete] Synthesizing subagent results.
+[Step 2 complete] All 3 subagents returned. Synthesizing results.
+```
+
+After [4]:
+```
+[Step 4 complete] Re-verification done. Preparing final status.
 ```
 
 ### SubA Checklist: L4 Meta + L3 Skills
@@ -336,6 +386,14 @@ After subagents complete:
 - [ ] If source code referenced by a doc has changed since last doc update, content is still accurate?
 - [ ] No LLM-generated architecture overviews or project descriptions in docs/?
 
+**Coverage Completeness** (use Coverage Map from [0]):
+- [ ] Every significant repo area in the Coverage Map has a corresponding docs/ file or section?
+- [ ] For each ❌ gap: is this area significant enough that an agent working there would need context? If yes, flag as a coverage issue
+- [ ] Existing docs/ files have **substantive content** — not just directory trees or file listings, but explanations of WHY the structure exists, HOW components interact, and WHAT decisions shaped the design?
+- [ ] Each docs/ file would give an agent enough context to work correctly in that area without guessing?
+
+**Self-test for substantive content**: Read each docs/ file and ask "if I were an agent modifying code in this area, would this doc prevent me from making a wrong assumption?" If the answer is no, the doc needs improvement — not just existence.
+
 **Health:**
 - [ ] No duplicate triggers between root and workspace CLAUDE.md
 - [ ] No speculative rules (rules not responding to actual agent mistakes)
@@ -356,7 +414,16 @@ After subagents complete:
 - [ ] CLAUDE.md trigger paths point to docs/ files that actually exist
 - [ ] Internal paths referenced from README.md actually exist
 
-### [6] Synthesize Report & Apply Fixes — Main Agent
+### [2] GATE: Confirm All Subagents Returned — Main Agent
+
+Before synthesizing, verify:
+- [ ] SubA returned results (L4 Meta + L3 Skills status)
+- [ ] SubB returned results (L2 AI Context status)
+- [ ] SubC returned results (L1 Entry Point + Cross-references status)
+
+If any subagent failed or was not dispatched, re-dispatch it now. Do NOT proceed with partial results.
+
+### [3] Synthesize Report & Apply Fixes — Main Agent
 
 Synthesize subagent results into a single report. **If issues are found, use `AskUserQuestion` to confirm fix scope before proceeding.**
 
@@ -369,6 +436,7 @@ Synthesize subagent results into a single report. **If issues are found, use `As
 - L2 AI Context: ✅/❌
 - L1 Entry Point: ✅/❌
 - Cross-references: ✅/❌
+- Coverage: ✅/❌
 
 ### Issues Found
 
@@ -378,13 +446,20 @@ Synthesize subagent results into a single report. **If issues are found, use `As
 | 2 | L2   | CLAUDE.md | docs/ references are simple pointers | High | — (behavioral) |
 | 3 | L2   | docs/arch.md | 350 lines, no § hints in triggers | Med | +800 tokens (full file read) |
 | 4 | L2   | docs/style.md | Linter-enforceable rules documented | Med | +600 tokens (wasted) |
+
+### Coverage Gaps
+
+| # | Repo Area | Why It Needs Docs | Proposed Action |
+|---|-----------|-------------------|-----------------|
+| 1 | skills/agent-benchmark/ | Agents modifying benchmark need metric definitions | Create docs/agent-benchmark.md or add § to existing doc |
+| 2 | Build/CI pipeline | Agent may break CI without understanding pipeline | Add §CI to docs/conventions.md |
 ```
 
 **Token Impact** estimates the per-session cost of the issue. Use `wc -w` on the affected content to estimate. Issues that waste tokens get priority over purely behavioral issues.
 
 **Severity criteria:**
-- **High**: Inline context in CLAUDE.md, conditional triggers not used, agent working with wrong context, token budget exceeded
-- **Medium**: Wrong information for users, affects skill behavior, docs/ file over 200 lines without § hints
+- **High**: Inline context in CLAUDE.md, conditional triggers not used, agent working with wrong context, token budget exceeded, **major repo area completely undocumented**
+- **Medium**: Wrong information for users, affects skill behavior, docs/ file over 200 lines without § hints, **docs/ file exists but content is superficial** (directory tree only, no WHY/HOW)
 - **Low**: Formatting inconsistency
 
 **The urge to downgrade severity is itself a Red Flag.** "This repo is special", "this level is fine" are rationalizations. Judge by the criteria.
@@ -399,7 +474,32 @@ Synthesize subagent results into a single report. **If issues are found, use `As
 
   Proceed? Let me know if you want to skip or modify any items."
   ```
-- Re-dispatch the relevant layer's subagent to re-verify after fixes
+- Re-dispatch the relevant layer's subagent to re-verify after fixes (MANDATORY — see [4])
+
+### [4] Re-verify After Fixes — Main Agent
+
+After applying fixes, re-dispatch subagents for every layer that had changes:
+- If you edited CLAUDE.md or docs/ → re-dispatch SubB
+- If you edited skill files or plugin meta → re-dispatch SubA
+- If you edited README.md → re-dispatch SubC
+
+Do NOT skip this step. "I can see the fix is correct" is a rationalization.
+
+### [5] GATE: Final All-Layer Status — Main Agent
+
+Before declaring the review complete, confirm **every layer** has a final status:
+
+```
+Final Status:
+- L4 Meta: ✅ verified / ❌ issues remain (list)
+- L3 Skills: ✅ verified / ❌ issues remain (list)
+- L2 AI Context: ✅ verified / ❌ issues remain (list)
+- L1 Entry Point: ✅ verified / ❌ issues remain (list)
+- Cross-references: ✅ verified / ❌ issues remain (list)
+- Coverage: ✅ all gaps addressed / ❌ gaps remain (list)
+```
+
+**Completion requires ALL layers to have a status.** A missing status means you skipped a layer — go back and verify it. Report this final status to the user.
 
 ---
 
@@ -422,6 +522,15 @@ Synthesize subagent results into a single report. **If issues are found, use `As
 | "Let Claude generate the architecture doc" | LLM-generated docs degrade performance. Human-written only |
 | "More context = more helpful" | More context = more noise. Every token competes for attention |
 | "This trigger is clear enough" | If you can't name a file that fires it, it's too vague |
+| "I'll just fix the obvious issues" | Partial fix without full review = incomplete gardening. Run ALL layers |
+| "This repo is small, I'll check inline" | Subagent dispatch is mandatory regardless of repo size. HARD-GATE rule |
+| "I've created the missing docs, done" | Creating files is step [3]. You still need [4] re-verify and [5] final status |
+| "Only L2 is relevant here" | ALL layers must be verified. Relevance is determined by subagents, not skipped by assumption |
+| "SubC can be skipped, no cross-ref changes" | Dispatch all 3. Subagents decide what's relevant, not you |
+| "Existing docs cover the repo well enough" | Did you build a Coverage Map? Without inventory, you're guessing |
+| "This area doesn't need docs" | If an agent might work there and make wrong assumptions, it needs docs |
+| "I listed the directory structure, that's docs" | Directory trees are not documentation. Explain WHY/HOW, not just WHAT |
+| "I created the missing files, coverage is done" | Creating files ≠ substantive content. Self-test: would this prevent wrong assumptions? |
 
 ## Tools
 
