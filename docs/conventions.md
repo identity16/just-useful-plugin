@@ -57,6 +57,33 @@ Brief purpose statement.
 | Common mistake | Correct approach |
 ```
 
+## User Interaction Patterns
+
+Skills run autonomously by default, but must use `AskUserQuestion` at key decision points where user input is needed. Plain text output does not pause for user response — the agent will proceed without waiting.
+
+### When to Use AskUserQuestion
+
+| Timing | Examples |
+|--------|----------|
+| **Mode/option selection** | Basic vs A/B, output format, target scope |
+| **Pre-execution confirmation** | Confirm generated plan, consent before destructive actions (hook install, file modification) |
+| **Pre-modification confirmation** | Show what will be changed before modifying user files |
+| **Ambiguous input resolution** | User request has multiple valid interpretations |
+
+### Progress Updates
+
+Output text updates at phase transitions so the user knows what's happening:
+```
+Phase 1 complete: 4 tasks generated. Starting Phase 2 (agent execution).
+```
+
+### SKILL.md Authoring Checklist
+
+- [ ] Identified points in the workflow where user input is required?
+- [ ] Specified `AskUserQuestion` usage at those points?
+- [ ] Included progress updates at phase transitions?
+- [ ] Added confirmation steps before destructive/irreversible actions?
+
 ## Version Bumping
 
 유의미한 변경 단위가 완료되면 플러그인 버전을 올린다. 매 커밋마다가 아니라, 하나의 기능/수정이 논리적으로 완결된 시점에 한 번.
@@ -75,6 +102,7 @@ Follow conventional commits: `feat:`, `fix:`, `docs:`, `chore:`.
 
 ## Language
 
-- SKILL.md content: can be Korean or English (match the target audience)
+- SKILL.md instructions: English (token-efficient, machine-parsed)
 - Frontmatter `name` and `description`: English (machine-parsed)
 - README.md: English
+- User-facing output (AskUserQuestion messages, progress updates, reports): Match the user's language. Do not hardcode a specific language in examples — use placeholders or English examples with an explicit note to adapt to user language.

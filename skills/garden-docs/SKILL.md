@@ -277,6 +277,18 @@ If a docs/ file hasn't been modified in 3+ months but the source code it referen
 
 Include change history and staleness flags in subagent prompts. Subagents cross-check whether each change is reflected in docs.
 
+**Progress updates** (adapt to user's language):
+
+Before dispatching subagents:
+```
+[Step 0 complete] Change history analysis done. Dispatching 3 subagents for L4–L1 layer verification.
+```
+
+After subagents complete:
+```
+[Verification complete] Synthesizing subagent results.
+```
+
 ### SubA Checklist: L4 Meta + L3 Skills
 
 **L4: Meta File Verification**
@@ -346,7 +358,7 @@ Include change history and staleness flags in subagent prompts. Subagents cross-
 
 ### [6] Synthesize Report & Apply Fixes — Main Agent
 
-Synthesize subagent results into a single report.
+Synthesize subagent results into a single report. **If issues are found, use `AskUserQuestion` to confirm fix scope before proceeding.**
 
 ```markdown
 ## Document Gardening Report (YYYY-MM-DD)
@@ -379,7 +391,14 @@ Synthesize subagent results into a single report.
 
 **Fix principles:**
 - **Fix directly**: Structural mismatches (missing file listings, path errors, MCP server lists)
-- **Confirm with user first**: Knowledge base structure changes, convention changes
+- **Confirm with user first**: Knowledge base structure changes, convention changes — use `AskUserQuestion` to present the fix plan and get approval:
+  ```
+  AskUserQuestion (adapt to user's language): "I'd like to apply these fixes:
+  1. [High] Move inline context from CLAUDE.md to docs/conventions.md
+  2. [Med] Split docs/architecture.md to stay under 200 lines
+
+  Proceed? Let me know if you want to skip or modify any items."
+  ```
 - Re-dispatch the relevant layer's subagent to re-verify after fixes
 
 ---
@@ -406,6 +425,7 @@ Synthesize subagent results into a single report.
 
 ## Tools
 
+- `AskUserQuestion`: Fix plan confirmation, knowledge base structure change approval — any point requiring user decision
 - `Glob`: Check file existence
 - `Grep`: Search references in docs, detect duplicate content, find orphan docs/ files
 - `Read`: Verify doc contents

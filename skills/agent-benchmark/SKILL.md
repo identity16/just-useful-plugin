@@ -34,6 +34,26 @@ Phase 1: Repo Analysis          Phase 2: Agent Execution         Phase 3: Report
 
 ---
 
+## Phase 0: User Intent Confirmation
+
+Use `AskUserQuestion` at skill start to confirm execution mode and options. Skip items the user has already specified.
+
+**Items to confirm:**
+- **Execution mode**: Basic (single environment) vs A/B (comparison)
+- **If A/B mode**: What differs between the two conditions (e.g., "with vs without CLAUDE.md", "docs structure A vs B")
+- **Task count preference**: Default 4–8, can be adjusted
+- **Focus category**: Whether to focus on a specific category (e.g., Modification only)
+
+```
+AskUserQuestion (adapt to user's language): "Please choose a benchmark mode:
+1. Basic — single benchmark run on current environment
+2. A/B — compare two environment configurations
+
+Any preference on task count or focus category? (Default: 1 per category, 4–8 total)"
+```
+
+---
+
 ## Phase 1: Repo Analysis & Task Generation
 
 ### [1] Repo Structure Scan
@@ -91,6 +111,23 @@ Generate 4–8 tasks per repo using extracted code elements. Reference `referenc
 ---
 
 ## Phase 2: Hooks Setup & Agent Execution
+
+### Phase 1 Complete → Task Confirmation
+
+After Phase 1, show generated tasks to the user and use `AskUserQuestion` to confirm before proceeding:
+
+```
+AskUserQuestion (adapt to user's language): "[Phase 1 complete] N tasks generated:
+
+1. [Discovery] Find the entry point for the API server
+2. [Comprehension] List all modules that depend on auth
+3. [Diagnosis] Trace where ValidationError is thrown
+4. [Modification] Add a new field to the User model
+
+Proceed with benchmark? Let me know if you want to modify/add/remove any tasks."
+```
+
+Proceed to Phase 2 only after user approval.
 
 ### [4] Hooks Setup
 
@@ -259,6 +296,13 @@ backtrack_ratio = backtrack_A / backtrack_B
 
 Compute mean ratios across tasks for the summary. See `references/metrics.md` §3.2 for edge cases.
 
+### Phase 2 Complete → Progress Update
+
+Output a text status update when Phase 2 finishes (adapt to user's language):
+```
+[Phase 2 complete] N tasks finished. Starting log parsing and report generation.
+```
+
 ### [10] Terminal Output
 
 Generate the report in terminal using the format defined in `references/report-format.md`.
@@ -269,7 +313,12 @@ Generate the report in terminal using the format defined in `references/report-f
 - Summary (successful count, total tokens, total time, avg backtrack)
 - A/B comparison tables and summary ratios (comparison mode only)
 
-**Optional export** (only on user request):
+After displaying the report, use `AskUserQuestion` to check for follow-up actions:
+```
+AskUserQuestion (adapt to user's language): "Would you like to export the report as JSON or Markdown? (Say 'no' if not needed)"
+```
+
+**Export formats** (only when user requests):
 - **JSON**: Machine-readable full results
 - **Markdown**: Human-readable report file
 
@@ -286,6 +335,7 @@ After report generation:
 
 ## Tools
 
+- `AskUserQuestion`: Mode selection, task confirmation, report export — any point requiring user decision
 - `Glob`: Repo structure scan, file pattern search, test/config file discovery
 - `Grep`: Import/export graph collection, error pattern search, code element extraction
 - `Read`: File content verification, JSONL log file reading, task answer verification
@@ -298,11 +348,11 @@ After report generation:
 
 | Thought | Reality |
 |---------|---------|
-| "레포가 작아서 벤치마크할 필요 없다" | 작은 레포도 환경 세팅 품질은 다를 수 있다 |
-| "태스크 하나만 돌려보면 충분하다" | 카테고리별 최소 1개씩 4개는 필요하다 |
-| "에이전트가 직접 도구 호출을 보고하면 된다" | 자기 보고는 누락 가능. hooks로 외부 캡처해야 한다 |
-| "실제 레포에서 바로 수정 태스크를 돌려도 된다" | worktree isolation 필수. 실제 코드를 오염시키면 안 된다 |
-| "태스크 하나뿐이니 isolation 없이 바로 돌려도 된다" | 단일 태스크라도 `isolation: "worktree"` 필수. 수정 작업이 main을 오염시킬 수 있다 |
-| "점수가 낮으면 모델이 나쁜 것이다" | 이 벤치마크는 환경 품질을 측정한다. 모델 성능 측정이 아니다 |
-| "hooks 로그가 없어도 대략 추정하면 된다" | 추정은 벤치마크가 아니다. 정확한 데이터 수집이 핵심 |
-| "태스크를 하나씩 순서대로 돌려야 한다" | 모든 태스크는 독립적이다. 병렬 dispatch로 시간을 절약해야 한다 |
+| "Repo is too small to benchmark" | Small repos can still vary in environment setup quality |
+| "One task is enough" | Minimum 1 per category, 4 total required |
+| "Agent can self-report tool calls" | Self-reporting can miss calls. Use hooks for external capture |
+| "Run modification tasks directly on the repo" | Worktree isolation is mandatory. Never pollute the actual codebase |
+| "Only one task, no need for isolation" | Even single tasks require `isolation: "worktree"`. Modifications can pollute main |
+| "Low score means the model is bad" | This benchmark measures environment quality, not model performance |
+| "Estimate without hook logs" | Estimation is not benchmarking. Accurate data collection is the point |
+| "Run tasks sequentially" | All tasks are independent. Use parallel dispatch to save time |
