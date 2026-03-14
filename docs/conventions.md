@@ -57,6 +57,18 @@ Brief purpose statement.
 | Common mistake | Correct approach |
 ```
 
+## Version Bumping
+
+유의미한 변경 단위가 완료되면 플러그인 버전을 올린다. 매 커밋마다가 아니라, 하나의 기능/수정이 논리적으로 완결된 시점에 한 번.
+
+- **minor** (0.X.0): 새 스킬 추가
+- **patch** (0.0.X): 기존 스킬의 동작 변경, 메트릭/포맷 변경, 버그 수정
+
+**동기화 대상 (모두 같은 버전이어야 함):**
+- `.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
+- `.cursor-plugin/plugin.json`
+
 ## Commit Messages
 
 Follow conventional commits: `feat:`, `fix:`, `docs:`, `chore:`.
