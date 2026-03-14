@@ -80,8 +80,8 @@ async function loadBenchmarks() {
                 repo.baseline.total_time,
                 repo.baseline.avg_backtrack * 100
               ],
-              backgroundColor: '#444',
-              borderRadius: 3
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              borderRadius: 4
             },
             {
               label: 'After',
@@ -90,8 +90,8 @@ async function loadBenchmarks() {
                 repo.after.total_time,
                 repo.after.avg_backtrack * 100
               ],
-              backgroundColor: '#3b82f6',
-              borderRadius: 3
+              backgroundColor: '#5e6ad2',
+              borderRadius: 4
             }
           ]
         },
@@ -103,21 +103,21 @@ async function loadBenchmarks() {
             legend: {
               position: 'bottom',
               labels: {
-                color: '#888',
-                font: { size: 11 },
-                boxWidth: 12,
-                padding: 12
+                color: 'rgba(240,239,244,0.35)',
+                font: { size: 10 },
+                boxWidth: 10,
+                padding: 14
               }
             }
           },
           scales: {
             x: {
-              grid: { color: '#262626' },
-              ticks: { color: '#888', font: { size: 10 } }
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: 'rgba(240,239,244,0.35)', font: { size: 10 } }
             },
             y: {
               grid: { display: false },
-              ticks: { color: '#888', font: { size: 10 } }
+              ticks: { color: 'rgba(240,239,244,0.45)', font: { size: 10 } }
             }
           }
         }
