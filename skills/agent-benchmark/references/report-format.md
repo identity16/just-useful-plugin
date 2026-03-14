@@ -61,10 +61,10 @@ fill = 1 - (value - excellent_threshold) / (poor_threshold - excellent_threshold
 fill = clamp(fill, 0, 1)
 ```
 
-For example, if Warmup Cost has Excellent <= 3 and Poor >= 12:
+For example, if Warmup Cost has Excellent <= 3 and Poor > 10:
 - Value 3 → fill = 1.0 → `██████████`
-- Value 6 → fill ≈ 0.67 → `███████░░░`
-- Value 12 → fill = 0.0 → `░░░░░░░░░░`
+- Value 6 → fill ≈ 0.57 → `██████░░░░`
+- Value 11 → fill = 0.0 → `░░░░░░░░░░`
 
 **Rendering formula:**
 
