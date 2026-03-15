@@ -343,7 +343,7 @@ Displayed in terminal immediately before the Summary section when any metric wor
   Metric     Previous   Current   Change
   Tokens     41,200     55,140    +34%   ← regressed
   Backtrack  0.05       0.20      +0.15  ← regressed
-  Time       158.4s     202.3s    +28%   (within threshold)
+  Time       158.4s     167.2s    +6%    (within threshold)
 ──────────────────────────────────────────────────
 ```
 
@@ -373,9 +373,9 @@ Displayed after the Summary section when `history.jsonl` contains 3 or more runs
   2026-03-14  9c9526e   41,200    158.4s    0.03
   2026-03-15  a1b2c3d   55,140    202.3s    0.07   ← today
 
-  Tokens:    ↑ 0% net (regressed today)
-  Time:      ↑ 0% net (regressed today)
-  Backtrack: ↓ 57% over 5 runs
+  Tokens:    ↑ 34% net (higher than period low)
+  Time:      ↑ 29% net (higher than period low)
+  Backtrack: ↓ 57% net over 5 runs
 ──────────────────────────────────────────────────────────────
 ```
 
@@ -398,7 +398,7 @@ When a version boundary exists in history, show a version divider between runs:
 - "Today" marker on the current run row
 - Net change line: compares first visible run of current version to current run
 - Only shown for re-runs (fixed task set) — not for fresh runs with new task sets
-- Version label is displayed as `v{task_set_version}` (e.g., `v1`, `v2`)
+- Version label is displayed as `v{task_set_version}` (e.g., `v1`, `v2`). When all displayed runs share the same version, show it only in the header title (e.g., `── Trend (last 5 runs, v1) ──`). When runs span multiple versions, add a `v` column per row and insert a version boundary divider line.
 
 ---
 
