@@ -440,7 +440,7 @@ AskUserQuestion (adapt to user's language): "Would you like to export the report
 
 Note: history.jsonl was already saved in [11]. Only ask about Markdown export here.
 
-### Cleanup
+### [16] Cleanup
 
 After report generation:
 1. **Remove hooks**: Uninstall PreToolUse/PostToolUse hooks
