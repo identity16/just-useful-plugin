@@ -31,12 +31,12 @@ Phase 1: Repo Analysis          Phase 1.5: Task Review        Phase 2: Execution
 & Task Generation               & Fixation                    & Hook Capture              & History
 ─────────────────────           ──────────────────────        ─────────────────────       ─────────────────
 [1] git log analysis            [4] Show tasks + metadata     [6] Setup hooks             [9]  Parse logs
-[2] Extract code elements       [5] User reviews/approves     [7] Run agents (parallel)   [10] Calculate metrics
-[3] Generate tasks                  → save tasks.json         [8] Capture tool calls      [11] Generate report
-                                                                                          [12] Auto-save history
-                                                                                          [13] Regression check
-                                                                                          [14] Trend view (if 3+)
-                                                                                          [15] Feedback suggestions
+[2] Extract code elements       [5] User reviews/approves     [7] Run agents (parallel)   [10] Generate report
+[3] Generate tasks                  → save tasks.json         [8] Capture tool calls      [11] Auto-save history
+                                                                                          [12] Regression check
+                                                                                          [13] Trend view (if 3+)
+                                                                                          [14] Feedback suggestions
+                                                                                          [15] Export (optional)
                                                                                           [16] Cleanup
 
 Re-run path:
@@ -344,7 +344,7 @@ Read the JSONL log file(s) and extract per-task data using the `session_id → t
 - Task completion status (correct/incorrect)
 - Timestamps (first and last tool call per task, for Elapsed Time)
 
-### [10] Metric Calculation
+### Metric Calculation
 
 Calculate metrics as defined in `references/metrics.md`:
 
@@ -373,7 +373,7 @@ Output a text status update when Phase 2 finishes (adapt to user's language):
 [Phase 2 complete] N tasks finished. Starting log parsing and report generation.
 ```
 
-### [11] Terminal Output
+### [10] Terminal Output
 
 Generate the report in terminal using the format defined in `references/report-format.md`.
 
@@ -383,9 +383,9 @@ Generate the report in terminal using the format defined in `references/report-f
 - Summary (successful count, total tokens, total time, avg backtrack)
 - A/B comparison tables and summary ratios (comparison mode only)
 
-After displaying the report, proceed to [12] Auto-Save to History (mandatory).
+After displaying the report, proceed to [11] Auto-Save to History (mandatory).
 
-### [12] Auto-Save to History
+### [11] Auto-Save to History
 
 After calculating metrics, always append the run result to `docs/benchmarks/history.jsonl`.
 This is mandatory — do not skip even if the user does not request export.
@@ -399,7 +399,7 @@ echo '<run_json>' >> docs/benchmarks/history.jsonl
 
 Include `task_set_version` from `docs/benchmarks/tasks.json` in the entry.
 
-### [13] Regression Detection
+### [12] Regression Detection
 
 Load the previous run from `history.jsonl` (most recent entry with same `task_set_version`).
 Compare current summary metrics against that run.
@@ -413,12 +413,12 @@ Skip regression check if:
 - This is the first run (no previous entry)
 - No previous run exists with the same `task_set_version`
 
-### [14] Trend View
+### [13] Trend View
 
 If `history.jsonl` contains 3+ runs with the same `task_set_version`, display trend section after Summary.
 Format defined in `references/report-format.md` §7.
 
-### [15] Feedback Loop Suggestions
+### [14] Feedback Loop Suggestions
 
 If `history.jsonl` contains 3+ runs for the current `task_set_version`, analyze patterns and surface task refinement suggestions. Reference `references/task-lifecycle.md` §6 for trigger conditions and suggestion types.
 
@@ -432,13 +432,13 @@ Would you like to refine the task set? (This will increment task_set_version: vN
 
 Only ask if there are actionable suggestions. Skip if all tasks are healthy.
 
-### [16] Export (optional)
+### [15] Export (optional)
 
 ```
 AskUserQuestion (adapt to user's language): "Would you like to export the report as Markdown? (history.jsonl was already saved automatically)"
 ```
 
-Note: history.jsonl was already saved in [12]. Only ask about Markdown export here.
+Note: history.jsonl was already saved in [11]. Only ask about Markdown export here.
 
 ### Cleanup
 
