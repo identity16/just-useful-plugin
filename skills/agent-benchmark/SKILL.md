@@ -30,20 +30,20 @@ Fresh-run path:
 Phase 1: Repo Analysis          Phase 1.5: Task Review        Phase 2: Execution          Phase 3: Report
 & Task Generation               & Fixation                    & Hook Capture              & History
 ─────────────────────           ──────────────────────        ─────────────────────       ─────────────────
-[1] git log analysis            [4] Show tasks + metadata     [6] Setup hooks             [9]  Parse logs
-[2] Extract code elements       [5] User reviews/approves     [7] Run agents (parallel)   [10] Generate report
-[3] Generate tasks                  → save tasks.json         [8] Capture tool calls      [11] Auto-save history
-                                                                                          [12] Regression check
+[1]  Repo structure scan        [4] Show tasks + metadata     [6] Setup hooks             [9]  Parse logs
+[1b] git log analysis           [5] User reviews/approves     [7] Run agents (parallel)   [10] Regression check
+[2]  Extract code elements          → save tasks.json         [8] Capture tool calls      [11] Generate report
+[3]  Generate tasks                                                                       [12] Auto-save history
                                                                                           [13] Trend view (if 3+)
                                                                                           [14] Feedback suggestions
                                                                                           [15] Export (optional)
                                                                                           [16] Cleanup
 
 Re-run path:
-[1] Load tasks.json → [2] Staleness check → [3] User confirms → [6–16] same as above
+Load tasks.json → [4] Staleness check → User confirms → [6–16] same as above
 
 Historical-comparison path:
-[1] Load tasks.json → [2] Staleness check → [3] Select baseline → [6–16] A/B layout vs history entry
+Load tasks.json → [4] Staleness check → Select baseline → [6–16] A/B layout vs history entry
 ```
 
 ---
@@ -373,19 +373,36 @@ Output a text status update when Phase 2 finishes (adapt to user's language):
 [Phase 2 complete] N tasks finished. Starting log parsing and report generation.
 ```
 
-### [10] Terminal Output
+### [10] Regression Detection
+
+Load the previous run from `history.jsonl` (most recent entry with same `task_set_version`).
+Compare current summary metrics against that run.
+
+If a regression is detected, prepare the warning for display in [11]. Format defined in `references/report-format.md` §6.
+
+Regression conditions:
+- Total tokens increased ≥ 20%
+- Total time increased ≥ 20%
+- Avg backtrack increased ≥ +0.10
+
+Skip regression check if:
+- This is the first run (no previous entry)
+- No previous run exists with the same `task_set_version`
+
+### [11] Terminal Output
 
 Generate the report in terminal using the format defined in `references/report-format.md`.
 
-**Report sections:**
+**Report sections (in order):**
 - Header with repo name, commit hash, task count
+- Regression warning (if prepared in [10]) — displayed before Summary
 - Per-task results table (category, status, tokens, time, backtrack)
 - Summary (successful count, total tokens, total time, avg backtrack)
 - A/B comparison tables and summary ratios (comparison mode only)
 
-After displaying the report, proceed to [11] Auto-Save to History (mandatory).
+After displaying the report, proceed to [12] Auto-Save to History (mandatory).
 
-### [11] Auto-Save to History
+### [12] Auto-Save to History
 
 After calculating metrics, always append the run result to `docs/benchmarks/history.jsonl`.
 This is mandatory — do not skip even if the user does not request export.
@@ -398,20 +415,6 @@ echo '<run_json>' >> docs/benchmarks/history.jsonl
 ```
 
 Include `task_set_version` from `docs/benchmarks/tasks.json` in the entry.
-
-### [12] Regression Detection
-
-Load the previous run from `history.jsonl` (most recent entry with same `task_set_version`).
-Compare current summary metrics against that run.
-
-Show regression warning (format in `references/report-format.md` §6) before the Summary section if:
-- Total tokens increased ≥ 20%
-- Total time increased ≥ 20%
-- Avg backtrack increased ≥ +0.10
-
-Skip regression check if:
-- This is the first run (no previous entry)
-- No previous run exists with the same `task_set_version`
 
 ### [13] Trend View
 
@@ -438,7 +441,7 @@ Only ask if there are actionable suggestions. Skip if all tasks are healthy.
 AskUserQuestion (adapt to user's language): "Would you like to export the report as Markdown? (history.jsonl was already saved automatically)"
 ```
 
-Note: history.jsonl was already saved in [11]. Only ask about Markdown export here.
+Note: history.jsonl was already saved in [12]. Only ask about Markdown export here.
 
 ### [16] Cleanup
 
