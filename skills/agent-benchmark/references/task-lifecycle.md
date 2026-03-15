@@ -30,8 +30,8 @@ Use git log to identify which areas matter most in the repo:
 # File change frequency (last 90 days)
 git log --since="90 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -30
 
-# Files touched by multiple contributors
-git log --format="%ae %H" --name-only | ...
+# Files touched by multiple contributors (group by file, count distinct authors)
+git log --format="" --name-only | sort | uniq | xargs -I{} sh -c 'echo "$(git log --format="%ae" -- {} | sort -u | wc -l) {}"' | sort -rn | head -20
 
 # Commit types for task category mapping
 git log --oneline --since="90 days ago" | grep -E "^[a-f0-9]+ (fix|feat|refactor):"
@@ -89,7 +89,7 @@ AskUserQuestion: Let the user:
 - Request regeneration of specific tasks
 - Add a custom task manually
 
-Only after user approval are tasks saved to `docs/benchmarks/tasks.json`.
+Only after user approval are tasks saved to `docs/benchmarks/tasks.json`. On initial creation, set both `created_at` and `last_updated` to the current timestamp.
 
 ### tasks.json schema
 
@@ -113,6 +113,7 @@ Only after user approval are tasks saved to `docs/benchmarks/tasks.json`.
       "difficulty": "easy|medium|hard",
       "source": "git-history|fixture|template|manual",
       "expected_files": ["src/auth/index.ts", "src/user/model.ts"],
+      "expected_identifiers": ["createUser", "UserModel"],
       "created_at": "ISO-8601"
     }
   ]
@@ -182,7 +183,7 @@ On re-run (when tasks.json exists), validate that fixed tasks are still runnable
 ```
 For each task in tasks.json:
   1. Check that all expected_files still exist
-  2. Check that referenced function/module names appear in those files (Grep)
+  2. If expected_identifiers is set, Grep each identifier in its expected_files
   3. If any check fails → mark task as STALE
 ```
 
