@@ -124,7 +124,7 @@ Triggered when the user requests `--json` or asks for JSON output.
     "project": "{project_name}",
     "commit": "{commit_hash}",
     "timestamp": "{ISO-8601}",
-    "mode": "single|comparison",
+    "mode": "single|ab",
     "task_count": 4
   },
   "tasks": [
@@ -159,7 +159,7 @@ Triggered when the user requests `--json` or asks for JSON output.
 
 ### A/B Comparison Schema
 
-When `meta.mode` is `"comparison"`, the `comparison` field is populated:
+When `meta.mode` is `"ab"`, the `comparison` field is populated:
 
 ```json
 {
@@ -223,7 +223,7 @@ When `meta.mode` is `"comparison"`, the `comparison` field is populated:
 | `meta.project` | string | Name of the benchmarked project |
 | `meta.commit` | string | Git commit hash (single run) or omitted (comparison) |
 | `meta.timestamp` | string | ISO-8601 timestamp of the run |
-| `meta.mode` | string | `"single"` for standard runs, `"comparison"` for A/B |
+| `meta.mode` | string | `"single"` or `"ab"` |
 | `meta.task_count` | integer | Number of tasks executed |
 | `tasks[].status` | string | `"complete"` or `"failed"` |
 | `tasks[].metrics.total_tokens` | integer | Total tokens consumed |
@@ -298,7 +298,7 @@ One JSON line per run.
   "run_id": "2026-03-15T14:32:00Z",
   "commit": "9c9526e",
   "task_set_version": 1,
-  "mode": "rerun|fresh",
+  "mode": "single|ab",
   "tasks": [
     {
       "id": "task-001",
@@ -397,14 +397,14 @@ When a version boundary exists in history, show a version divider between runs:
 - Show up to last 10 runs (oldest first)
 - "Today" marker on the current run row
 - Net change line: compares first visible run of current version to current run
-- Only shown for re-runs (fixed task set) — not for fresh runs with new task sets
+- Only shown when reusing existing tasks.json — not shown after generating a new task set
 - Version label is displayed as `v{task_set_version}` (e.g., `v1`, `v2`). When all displayed runs share the same version, show it only in the header title (e.g., `── Trend (last 5 runs, v1) ──`). When runs span multiple versions, add a `v` column per row and insert a version boundary divider line.
 
 ---
 
 ## 8. Historical Comparison Format
 
-Used when the user selects "historical comparison" mode — comparing the current run against a specific past run.
+Used in single mode when the user requests comparison against a specific past run (last / baseline / best / specific date).
 Layout mirrors A/B comparison format (§2), but labels are dates/commits instead of condition names.
 
 ### Template

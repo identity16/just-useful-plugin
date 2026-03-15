@@ -14,8 +14,8 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 - Always run benchmark agents in worktree isolation — use `isolation: "worktree"` on every Agent dispatch (basic mode) or pre-configured worktrees (A/B mode). Never let agents modify the actual repo.
 - Always clean up hooks and worktrees after benchmark completion
 - Always auto-save run results to `docs/benchmarks/history.jsonl` — this is mandatory, not optional
-- In re-run mode, always validate task staleness before executing — never silently skip stale tasks
-- In fresh-run mode, always present generated tasks for user review before fixing them
+- Always validate task staleness when tasks.json exists — never silently skip stale tasks
+- Always present generated tasks for user review before fixing them
 
 </HARD-GATE>
 
@@ -24,60 +24,49 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 ## Execution Flow Overview
 
 ```
-[Phase 0] Mode Selection → fresh-run | re-run | historical-comparison | A/B
+[Phase 0] Mode Selection → single | A/B
+          Task source (automatic): tasks.json exists? → reuse : generate new
 
-Fresh-run path:
-Phase 1: Repo Analysis          Phase 1.5: Task Review        Phase 2: Execution          Phase 3: Report
-& Task Generation               & Fixation                    & Hook Capture              & History
+Single path:
+Phase 1: Task Setup             Phase 1.5: Review             Phase 2: Execution          Phase 3: Report
+(only if no tasks.json)         & Fixation                    & Hook Capture              & History
 ─────────────────────           ──────────────────────        ─────────────────────       ─────────────────
-[1]  Repo structure scan        [4] Show tasks + metadata     [6] Setup hooks             [9]  Parse logs
-[1b] git log analysis           [5] User reviews/approves     [7] Run agents (parallel)   [10] Regression check
-[2]  Extract code elements          → save tasks.json         [8] Capture tool calls      [11] Generate report
-[3]  Generate tasks                                                                       [12] Auto-save history
-                                                                                          [13] Trend view (if 3+)
+[1]  Repo structure scan        [4] Staleness check           [6] Setup hooks             [9]  Parse logs
+[1b] git log analysis               (if tasks.json exists)    [7] Run agents (parallel)   [10] Regression check
+[2]  Extract code elements      [5] Task review & approve     [8] Capture tool calls      [11] Generate report
+[3]  Generate tasks                 (if new tasks)                                        [12] Auto-save history
+                                    → save tasks.json                                     [13] Trend view (if 3+)
                                                                                           [14] Feedback suggestions
                                                                                           [15] Export (optional)
                                                                                           [16] Cleanup
 
-Re-run path:
-Load tasks.json → [4] Staleness check → User confirms → [6–16] same as above
-
-Historical-comparison path:
-Load tasks.json → [4] Staleness check → Select baseline → [6–16] A/B layout vs history entry
+A/B path: same Phase 1/1.5 for task setup → [6] setup two worktrees → [7] run all tasks on both → [9–16]
 ```
 
 ---
 
 ## Phase 0: Mode Selection
 
-Before any analysis, determine which run mode to use.
+Two decisions happen in sequence: comparison type, then task source.
 
-### Check for existing task set
+### Step 1: Choose comparison type
+
+```
+AskUserQuestion (adapt to user's language): "Which benchmark mode?
+1. Single — measure current environment (records to history, tracks improvement)
+2. A/B — compare two environment configurations side by side"
+```
+
+### Step 2: Determine task source (automatic)
 
 ```bash
-# Check if tasks.json exists
 ls docs/benchmarks/tasks.json 2>/dev/null
 ```
 
-**If tasks.json does NOT exist** → Fresh-run mode (go to Phase 1)
+**If tasks.json does NOT exist** → generate new tasks (Phase 1)
+**If tasks.json EXISTS** → reuse existing tasks (skip Phase 1, go to Phase 1.5 for staleness check)
 
-**If tasks.json EXISTS** → Use AskUserQuestion:
-
-```
-AskUserQuestion (adapt to user's language): "docs/benchmarks/tasks.json found (N tasks, created YYYY-MM-DD, v{task_set_version}).
-
-Choose a run mode:
-1. Re-run — use fixed task set (recommended for tracking improvement)
-2. Historical comparison — run vs a previous result (last / baseline / best / specific date)
-3. Fresh run — generate new tasks (discards existing task set)
-4. A/B comparison — compare two environment configurations
-
-Any changes to task count or category focus?"
-```
-
-**If mode is re-run or historical-comparison** → skip Phase 1, go to Phase 1.5 (Staleness Check)
-**If mode is fresh-run** → proceed to Phase 1
-**If mode is A/B** → proceed to Phase 1 (or Phase 1.5 if tasks.json exists and user wants same tasks across both conditions)
+The user can also request new task generation even when tasks.json exists (e.g., "generate fresh tasks") — in that case proceed to Phase 1 and overwrite tasks.json after review.
 
 ---
 
@@ -162,7 +151,7 @@ Generate 4–8 tasks per repo using extracted code elements. Reference `referenc
 
 ## Phase 1.5: Task Review & Fixation
 
-### [4] Staleness Check (re-run and historical-comparison modes only)
+### [4] Staleness Check (when tasks.json exists)
 
 Load `docs/benchmarks/tasks.json` and validate each task. Reference `references/task-lifecycle.md` §5 for staleness detection logic.
 
@@ -176,7 +165,7 @@ for each file in task.expected_files: test -f "$file"
 
 Mark tasks as STALE if any expected_file is missing or any expected_identifier cannot be found. Present stale tasks to user and ask how to handle (skip / regenerate / run anyway).
 
-### [5] Task Review & Fixation (fresh-run mode only)
+### [5] Task Review & Fixation (when generating new tasks)
 
 After Phase 1 task generation, present tasks with quality metadata for user review. Reference `references/task-lifecycle.md` §3 for presentation format and tasks.json schema.
 
