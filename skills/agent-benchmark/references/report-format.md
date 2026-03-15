@@ -283,3 +283,156 @@ json
 ### A/B Comparison Example
 
 The Markdown report includes per-metric comparison tables and summary ratios, following the same layout as the terminal A/B comparison format.
+
+---
+
+## 5. History Log Format (history.jsonl)
+
+Every benchmark run is automatically appended to `docs/benchmarks/history.jsonl`.
+One JSON line per run.
+
+### Entry Schema
+
+```json
+{
+  "run_id": "2026-03-15T14:32:00Z",
+  "commit": "9c9526e",
+  "task_set_version": 1,
+  "mode": "rerun|fresh",
+  "tasks": [
+    {
+      "id": "task-001",
+      "category": "Discovery",
+      "status": "complete|failed",
+      "metrics": {
+        "total_tokens": 12340,
+        "elapsed_time": 42.0,
+        "backtrack_rate": 0.08
+      }
+    }
+  ],
+  "summary": {
+    "successful": 4,
+    "total": 4,
+    "total_tokens": 55140,
+    "total_time": 202.3,
+    "avg_backtrack": 0.07
+  }
+}
+```
+
+### Notes
+
+- Appended automatically after every run — not optional
+- One line per run (JSONL format, not a JSON array)
+- `run_id` is the ISO-8601 timestamp of the run start
+- `commit` is the short hash of HEAD at run time
+- `task_set_version` matches the version in `docs/benchmarks/tasks.json` at run time
+
+---
+
+## 6. Regression Warning Format
+
+Displayed in terminal immediately before the Summary section when any metric worsens by ≥ 20% vs the previous run with the same `task_set_version`.
+
+### Template
+
+```
+⚠️  Regression detected vs last run (2026-03-14)
+──────────────────────────────────────────────────
+  Metric     Previous   Current   Change
+  Tokens     41,200     55,140    +34%   ← regressed
+  Backtrack  0.05       0.20      +0.15  ← regressed
+  Time       158.4s     202.3s    +28%   (within threshold)
+──────────────────────────────────────────────────
+```
+
+### Threshold
+
+Default: ≥ 20% increase in tokens or time, or ≥ +0.10 absolute increase in backtrack rate.
+
+### When not shown
+
+- First run (no previous run to compare)
+- No prior run exists with the same `task_set_version`
+
+---
+
+## 7. Trend View Format
+
+Displayed after the Summary section when `history.jsonl` contains 3 or more runs with the same `task_set_version` as the current run.
+
+### Template
+
+```
+── Trend (last 5 runs, v1) ─────────────────────────────────
+  Date        Commit    Tokens    Time      Backtrack
+  2026-03-10  4a3b2c1   55,140    202.3s    0.07
+  2026-03-11  8d4e5f2   48,320    178.1s    0.05
+  2026-03-12  1f6g7h3   45,200    165.4s    0.04
+  2026-03-14  9c9526e   41,200    158.4s    0.03
+  2026-03-15  a1b2c3d   55,140    202.3s    0.07   ← today
+
+  Tokens:    ↑ 0% net (regressed today)
+  Time:      ↑ 0% net (regressed today)
+  Backtrack: ↓ 57% over 5 runs
+──────────────────────────────────────────────────────────────
+```
+
+When a version boundary exists in history, show a version divider between runs:
+
+```
+── Trend (all runs) ────────────────────────────────────────
+  Date        Commit    v   Tokens    Time      Backtrack
+  2026-03-10  4a3b2c1   1   55,140    202.3s    0.07
+  2026-03-12  8d4e5f2   1   48,320    178.1s    0.05
+  ── task set updated to v2 (added Diagnosis task) ──────────
+  2026-03-14  1f6g7h3   2   41,200    158.4s    0.03
+  2026-03-15  9c9526e   2   55,140    202.3s    0.07   ← today
+──────────────────────────────────────────────────────────────
+```
+
+### Rules
+
+- Show up to last 10 runs (oldest first)
+- "Today" marker on the current run row
+- Net change line: compares first visible run of current version to current run
+- Only shown for re-runs (fixed task set) — not for fresh runs with new task sets
+- Version label is displayed as `v{task_set_version}` (e.g., `v1`, `v2`)
+
+---
+
+## 8. Historical Comparison Format
+
+Used when the user selects "historical comparison" mode — comparing the current run against a specific past run.
+Layout mirrors A/B comparison format (§2), but labels are dates/commits instead of condition names.
+
+### Template
+
+```
+╔══════════════════════════════════════════════════════════╗
+║           Agent Benchmark Report                         ║
+║           {project} — {today_commit} vs {baseline_commit}║
+║           (today) vs (baseline: 2026-03-10)              ║
+╠══════════════════════════════════════════════════════════╣
+
+── Task Comparison ────────────────────────────────────────
+  (same layout as A/B comparison, §2)
+
+── Summary ────────────────────────────────────────────────
+  Avg Token Ratio:     1.34  → baseline이 효율적 (오늘 +34%)
+  Avg Time Ratio:      1.28  → baseline이 효율적 (오늘 +28%)
+  Avg Backtrack Ratio: 2.33  → baseline이 효율적 (오늘 +133%)
+
+╚══════════════════════════════════════════════════════════╝
+```
+
+### Baseline selection
+
+The user can compare against:
+- `last`: most recent run in history.jsonl with same `task_set_version`
+- `baseline`: a run explicitly tagged as baseline (stored in `docs/benchmarks/baseline.json`)
+- `best`: run with lowest total_tokens in history.jsonl with same `task_set_version`
+- A specific date: matched against `run_id` prefix
+
+User can override version filtering to compare across versions when explicitly requested.
