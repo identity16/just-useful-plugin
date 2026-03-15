@@ -10,11 +10,12 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 <HARD-GATE>
 
 - Never report scores without actually running benchmark tasks
-- Always generate tasks dynamically from the target repo — never use hardcoded tasks
 - Always use hooks (PreToolUse/PostToolUse) for log capture — never rely on agent self-reporting
 - Always run benchmark agents in worktree isolation — use `isolation: "worktree"` on every Agent dispatch (basic mode) or pre-configured worktrees (A/B mode). Never let agents modify the actual repo.
-- Never skip the repo analysis step — task quality depends on accurate code element extraction
 - Always clean up hooks and worktrees after benchmark completion
+- Always auto-save run results to `docs/benchmarks/history.jsonl` — this is mandatory, not optional
+- In re-run mode, always validate task staleness before executing — never silently skip stale tasks
+- In fresh-run mode, always present generated tasks for user review before fixing them
 
 </HARD-GATE>
 
@@ -23,34 +24,60 @@ Measure how well a codebase environment supports AI agent task performance. Comp
 ## Execution Flow Overview
 
 ```
-Phase 1: Repo Analysis          Phase 2: Agent Execution         Phase 3: Report
-& Task Generation               & Hook Capture                   & Cleanup
-─────────────────────           ─────────────────────            ─────────────────
-[1] Scan repo structure         [4] Setup hooks (JSONL log)      [7] Parse logs (by session_id)
-[2] Extract code elements       [5] Run agents in parallel       [8] Calculate metrics
-[3] Generate dynamic tasks      [6] Capture tool calls           [9] Generate report
-                                                                 [10] Cleanup
+[Phase 0] Mode Selection → fresh-run | re-run | historical-comparison | A/B
+
+Fresh-run path:
+Phase 1: Repo Analysis          Phase 1.5: Task Review        Phase 2: Execution          Phase 3: Report
+& Task Generation               & Fixation                    & Hook Capture              & History
+─────────────────────           ──────────────────────        ─────────────────────       ─────────────────
+[1] git log analysis            [4] Show tasks + metadata     [6] Setup hooks             [9]  Parse logs
+[2] Extract code elements       [5] User reviews/approves     [7] Run agents (parallel)   [10] Calculate metrics
+[3] Generate tasks                  → save tasks.json         [8] Capture tool calls      [11] Generate report
+                                                                                          [12] Auto-save history
+                                                                                          [13] Regression check
+                                                                                          [14] Trend view (if 3+)
+                                                                                          [15] Feedback suggestions
+                                                                                          [16] Cleanup
+
+Re-run path:
+[1] Load tasks.json → [2] Staleness check → [3] User confirms → [6–16] same as above
+
+Historical-comparison path:
+[1] Load tasks.json → [2] Staleness check → [3] Select baseline → [6–16] A/B layout vs history entry
 ```
 
 ---
 
-## Phase 0: User Intent Confirmation
+## Phase 0: Mode Selection
 
-Use `AskUserQuestion` at skill start to confirm execution mode and options. Skip items the user has already specified.
+Before any analysis, determine which run mode to use.
 
-**Items to confirm:**
-- **Execution mode**: Basic (single environment) vs A/B (comparison)
-- **If A/B mode**: What differs between the two conditions (e.g., "with vs without CLAUDE.md", "docs structure A vs B")
-- **Task count preference**: Default 4–8, can be adjusted
-- **Focus category**: Whether to focus on a specific category (e.g., Modification only)
+### Check for existing task set
+
+```bash
+# Check if tasks.json exists
+ls docs/benchmarks/tasks.json 2>/dev/null
+```
+
+**If tasks.json does NOT exist** → Fresh-run mode (go to Phase 1)
+
+**If tasks.json EXISTS** → Use AskUserQuestion:
 
 ```
-AskUserQuestion (adapt to user's language): "Please choose a benchmark mode:
-1. Basic — single benchmark run on current environment
-2. A/B — compare two environment configurations
+AskUserQuestion (adapt to user's language): "docs/benchmarks/tasks.json found (N tasks, created YYYY-MM-DD, v{task_set_version}).
 
-Any preference on task count or focus category? (Default: 1 per category, 4–8 total)"
+Choose a run mode:
+1. Re-run — use fixed task set (recommended for tracking improvement)
+2. Historical comparison — run vs a previous result (last / baseline / best / specific date)
+3. Fresh run — generate new tasks (discards existing task set)
+4. A/B comparison — compare two environment configurations
+
+Any changes to task count or category focus?"
 ```
+
+**If mode is re-run or historical-comparison** → skip Phase 1, go to Phase 1.5 (Staleness Check)
+**If mode is fresh-run** → proceed to Phase 1
+**If mode is A/B** → proceed to Phase 1 (or Phase 1.5 if tasks.json exists and user wants same tasks across both conditions)
 
 ---
 
@@ -73,6 +100,29 @@ git log --oneline --diff-filter=ADR --name-status --since="4 weeks ago"
 ```
 
 Use `Glob` to map file patterns: `**/*.ts`, `**/*.py`, `**/*.md`, etc.
+
+### [1b] Git History Analysis (Coverage Signal)
+
+Use git log to identify high-value areas for task coverage. Reference `references/task-lifecycle.md` §2 for full strategy.
+
+```bash
+# High-frequency files (last 90 days) — Discovery/Comprehension targets
+git log --since="90 days ago" --name-only --format="" | grep -v "^$" | sort | uniq -c | sort -rn | head -20
+
+# Recent fix commits — Diagnosis task candidates
+git log --oneline --since="90 days ago" | grep -E " fix(\(|:)"
+
+# Recent feat commits — Modification task candidates
+git log --oneline --since="90 days ago" | grep -E " feat(\(|:)"
+```
+
+Map findings to task categories:
+- Top-frequency files → preferred `expected_files` for Discovery tasks
+- `fix:` commit areas → Diagnosis task targets
+- `feat:` commit areas → Modification task targets
+- Files touched by 3+ contributors → harder Comprehension tasks
+
+For repos with < 20 commits or < 4 weeks history, fall back to canonical template binding (existing Phase 1 [3] logic).
 
 ### [2] Code Element Extraction
 
@@ -110,26 +160,46 @@ Generate 4–8 tasks per repo using extracted code elements. Reference `referenc
 
 ---
 
-## Phase 2: Hooks Setup & Agent Execution
+## Phase 1.5: Task Review & Fixation
 
-### Phase 1 Complete → Task Confirmation
+### [4] Staleness Check (re-run and historical-comparison modes only)
 
-After Phase 1, show generated tasks to the user and use `AskUserQuestion` to confirm before proceeding:
+Load `docs/benchmarks/tasks.json` and validate each task. Reference `references/task-lifecycle.md` §5 for staleness detection logic.
+
+```bash
+# Check expected_files still exist
+for each file in task.expected_files: test -f "$file"
+
+# Check expected_identifiers still appear (if field is set)
+# Grep each identifier in its expected_files
+```
+
+Mark tasks as STALE if any expected_file is missing or any expected_identifier cannot be found. Present stale tasks to user and ask how to handle (skip / regenerate / run anyway).
+
+### [5] Task Review & Fixation (fresh-run mode only)
+
+After Phase 1 task generation, present tasks with quality metadata for user review. Reference `references/task-lifecycle.md` §3 for presentation format and tasks.json schema.
 
 ```
 AskUserQuestion (adapt to user's language): "[Phase 1 complete] N tasks generated:
 
-1. [Discovery] Find the entry point for the API server
-2. [Comprehension] List all modules that depend on auth
-3. [Diagnosis] Trace where ValidationError is thrown
-4. [Modification] Add a new field to the User model
+  #   Category        R   Modules  Source         Task
+  1   Discovery       3   1        git-history    ...
+  2   Comprehension   5   2        git-history    ...
+  3   Diagnosis       4   2        template       ...
+  4   Modification    6   3        fixture        ...
 
-Proceed with benchmark? Let me know if you want to modify/add/remove any tasks."
+Approve this task set to save as docs/benchmarks/tasks.json?
+Or specify: remove #N / regenerate #N / add custom task"
 ```
 
-Proceed to Phase 2 only after user approval.
+After user approval, save tasks to `docs/benchmarks/tasks.json` with `task_set_version: 1`. Schema and versioning rules in `references/task-lifecycle.md` §3–§4.
 
-### [4] Hooks Setup
+---
+
+## Phase 2: Hooks Setup & Agent Execution
+
+### [6] Hooks Setup
 
 Create a temporary JSONL log file for capturing all tool calls:
 
@@ -195,7 +265,7 @@ Each log entry records:
 
 > **Note:** Each subagent dispatch gets a unique `session_id`. The benchmark runner records the mapping of `session_id → task_id` from each Agent dispatch, then uses this mapping to correlate JSONL log entries to tasks during Phase 3 log parsing. This enables parallel task execution without log entry ambiguity.
 
-### [5] Agent Execution — Basic Mode
+### [7] Agent Execution — Basic Mode
 
 **Parallel execution**: dispatch all tasks concurrently as subagents for maximum speed.
 
@@ -233,7 +303,7 @@ Main Agent
 
 **Session-to-task mapping**: After all agents complete, record the `agentId` returned by each Agent dispatch. This `agentId` corresponds to the `session_id` in JSONL log entries, enabling accurate per-task log correlation even with concurrent execution.
 
-### [6] Agent Execution — Advanced Mode (A/B Comparison)
+### [8] Agent Execution — Advanced Mode (A/B Comparison)
 
 For comparing two environment configurations (e.g., with vs without CLAUDE.md, different docs structures):
 
@@ -264,7 +334,7 @@ concurrently  ──────├── Task 2-B (worktree-b) ──→ log-b.
 
 ## Phase 3: Log Collection & Report
 
-### [7] Log Parsing
+### [9] Log Parsing
 
 Read the JSONL log file(s) and extract per-task data using the `session_id → task` mapping recorded during Phase 2:
 
@@ -274,7 +344,7 @@ Read the JSONL log file(s) and extract per-task data using the `session_id → t
 - Task completion status (correct/incorrect)
 - Timestamps (first and last tool call per task, for Elapsed Time)
 
-### [8] Metric Calculation
+### [10] Metric Calculation
 
 Calculate metrics as defined in `references/metrics.md`:
 
@@ -284,7 +354,7 @@ Calculate metrics as defined in `references/metrics.md`:
 
 Only successful tasks are included in summary statistics.
 
-### [9] A/B Ratio Calculation (Comparison Mode Only)
+### A/B Ratio Calculation (Comparison Mode Only)
 
 For each successful task present in both conditions, compute per-metric ratios:
 
@@ -303,7 +373,7 @@ Output a text status update when Phase 2 finishes (adapt to user's language):
 [Phase 2 complete] N tasks finished. Starting log parsing and report generation.
 ```
 
-### [10] Terminal Output
+### [11] Terminal Output
 
 Generate the report in terminal using the format defined in `references/report-format.md`.
 
@@ -313,14 +383,62 @@ Generate the report in terminal using the format defined in `references/report-f
 - Summary (successful count, total tokens, total time, avg backtrack)
 - A/B comparison tables and summary ratios (comparison mode only)
 
-After displaying the report, use `AskUserQuestion` to check for follow-up actions:
-```
-AskUserQuestion (adapt to user's language): "Would you like to export the report as JSON or Markdown? (Say 'no' if not needed)"
+After displaying the report, proceed to [12] Auto-Save to History (mandatory).
+
+### [12] Auto-Save to History
+
+After calculating metrics, always append the run result to `docs/benchmarks/history.jsonl`.
+This is mandatory — do not skip even if the user does not request export.
+Format defined in `references/report-format.md` §5.
+
+```bash
+# Create directory if needed, append run result as one JSON line
+mkdir -p docs/benchmarks
+echo '<run_json>' >> docs/benchmarks/history.jsonl
 ```
 
-**Export formats** (only when user requests):
-- **JSON**: Machine-readable full results
-- **Markdown**: Human-readable report file
+Include `task_set_version` from `docs/benchmarks/tasks.json` in the entry.
+
+### [13] Regression Detection
+
+Load the previous run from `history.jsonl` (most recent entry with same `task_set_version`).
+Compare current summary metrics against that run.
+
+Show regression warning (format in `references/report-format.md` §6) before the Summary section if:
+- Total tokens increased ≥ 20%
+- Total time increased ≥ 20%
+- Avg backtrack increased ≥ +0.10
+
+Skip regression check if:
+- This is the first run (no previous entry)
+- No previous run exists with the same `task_set_version`
+
+### [14] Trend View
+
+If `history.jsonl` contains 3+ runs with the same `task_set_version`, display trend section after Summary.
+Format defined in `references/report-format.md` §7.
+
+### [15] Feedback Loop Suggestions
+
+If `history.jsonl` contains 3+ runs for the current `task_set_version`, analyze patterns and surface task refinement suggestions. Reference `references/task-lifecycle.md` §6 for trigger conditions and suggestion types.
+
+```
+AskUserQuestion (adapt to user's language): "[Optional] Based on N runs (v{task_set_version}):
+  - Diagnosis tasks: avg backtrack 0.38 (consistently highest)
+  - task-003: failed 2/3 runs
+
+Would you like to refine the task set? (This will increment task_set_version: vN → vN+1)"
+```
+
+Only ask if there are actionable suggestions. Skip if all tasks are healthy.
+
+### [16] Export (optional)
+
+```
+AskUserQuestion (adapt to user's language): "Would you like to export the report as Markdown? (history.jsonl was already saved automatically)"
+```
+
+Note: history.jsonl was already saved in [12]. Only ask about Markdown export here.
 
 ### Cleanup
 
