@@ -1,6 +1,6 @@
 ---
 name: agent-benchmark
-description: Use when measuring agent task performance in a codebase, evaluating environment setup quality for AI agents, benchmarking agent resource efficiency, or running A/B comparisons of documentation/context configurations
+description: Use when measuring agent task performance in a codebase, evaluating environment setup quality for AI agents, benchmarking agent resource efficiency, running A/B comparisons of documentation/context configurations, or tracking performance improvement over time with continuous measurement
 ---
 
 # Agent Benchmark
